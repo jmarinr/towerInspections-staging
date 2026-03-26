@@ -32,6 +32,7 @@ export default function InventarioEquiposV2() {
     updateEquipmentV2SiteField,
     resetFormDraft,
     finalizeForm,
+    checkForceUpdateAfterFinalize: checkForceUpdate,
   } = useAppStore()
 
   const [showConfirm, setShowConfirm] = useState(false)
@@ -153,6 +154,7 @@ export default function InventarioEquiposV2() {
           setShowConfirm(false)
           try {
             await finalizeForm('inventario-v2')
+            if (!checkForceUpdate()) {
             showToast('¡Inventario v2 enviado!', 'success')
             setTimeout(() => navigate('/'), 3000)
           } catch (e) {

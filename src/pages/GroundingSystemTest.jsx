@@ -70,6 +70,7 @@ export default function GroundingSystemTest() {
   const formMeta = useAppStore((s) => s.formMeta)
   const resetFormDraft = useAppStore((s) => s.resetFormDraft)
   const finalizeForm = useAppStore((s) => s.finalizeForm)
+  const checkForceUpdate = useAppStore((s) => s.checkForceUpdateAfterFinalize)
 
   const sections = groundingSystemTestConfig.sections
 
@@ -290,8 +291,10 @@ export default function GroundingSystemTest() {
         onConfirm={async () => {
           setShowConfirm(false)
           await finalizeForm('puesta-tierra')
-          showToast('¡Formulario enviado!', 'success')
-          setTimeout(() => navigate('/'), 3000)
+          if (!checkForceUpdate()) {
+            showToast('¡Formulario enviado!', 'success')
+            setTimeout(() => navigate('/'), 3000)
+          }
         }}
         loading={loading}
       />

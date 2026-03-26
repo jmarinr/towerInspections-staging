@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, useLocation } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import Home from './pages/Home'
 import InspeccionSitio from './pages/InspeccionSitio'
@@ -17,10 +17,12 @@ import Toast from './components/ui/Toast'
 import ConnectivityBanner from './components/ui/ConnectivityBanner'
 import { useAppStore } from './hooks/useAppStore'
 
-const APP_VERSION = '2.5.89'
+const APP_VERSION = '2.5.90'
 import { startSupabaseBackgroundSync } from './lib/supabaseSync'
 import { supabase } from './lib/supabaseClient'
 import RequireAuth from './components/auth/RequireAuth'
+import UpdateBanner from './components/ui/UpdateBanner'
+import UpdateToast from './components/ui/UpdateToast'
 
 function NotFound() {
   return (
@@ -39,10 +41,25 @@ function NotFound() {
   )
 }
 
+// Form paths — used to detect if inspector is mid-documentation
+const FORM_PATHS = [
+  '/inspeccion', '/inspeccion-sitio', '/mantenimiento', '/mantenimiento-preventivo',
+  '/mantenimiento-ejecutado', '/inventario-equipos', '/inventario-equipos-v2',
+  '/safety-climbing-device', '/sistema-ascenso', '/grounding-system-test', '/reporte-fotos'
+]
+
 function App() {
   const [showSplash, setShowSplash] = useState(true)
   const { toast, hideToast, logout } = useAppStore()
   const forceUpdate = useAppStore((s) => s.forceUpdate)
+  const session    = useAppStore((s) => s.session)
+  const activeVisit = useAppStore((s) => s.activeVisit)
+  const location   = useLocation()
+
+  // Derived state: where is the inspector?
+  const isInForm   = FORM_PATHS.some(p => location.pathname.startsWith(p))
+  const hasSession = !!session
+  const hasOrder   = !!activeVisit
 
 
   useEffect(() => {
@@ -86,6 +103,21 @@ function App() {
     return () => clearInterval(interval)
   }, [])
 
+  // ── Handle update action ──────────────────────────────────────────────────
+  const doUpdate = () => {
+    logout({ clearDevice: true })
+    setTimeout(() => window.location.reload(true), 300)
+  }
+
+  // ── Scenario 1: no session → silent reload ───────────────────────────────
+  // If forceUpdate and not logged in, reload immediately (no data to lose)
+  useEffect(() => {
+    if (forceUpdate && !hasSession && !showSplash) {
+      console.log('[VersionCheck] scenario 1: no session — silent reload')
+      setTimeout(() => window.location.reload(true), 800)
+    }
+  }, [forceUpdate, hasSession, showSplash])
+
 
   // Session watchdog moved to RequireAuth.jsx — runs only when authenticated
 
@@ -112,30 +144,42 @@ function App() {
     <>
       {showSplash && <SplashScreen />}
 
-      {/* ── Force update modal ── */}
-      {forceUpdate && (
-        <div className="fixed inset-0 z-[9999] bg-black/70 flex items-center justify-center px-6">
-          <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl text-center space-y-4">
-            <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto">
-              <span className="text-3xl">🗼</span>
+      {/* ── Version update — 4 scenarios ── */}
+      {forceUpdate && hasSession && (
+        <>
+          {/* Scenario 2: logged in, no active order → blocking modal */}
+          {!hasOrder && (
+            <div className="fixed inset-0 z-[9999] bg-black/70 flex items-center justify-center px-6">
+              <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl text-center space-y-4">
+                <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto">
+                  <span className="text-3xl">🗼</span>
+                </div>
+                <div>
+                  <p className="text-base font-extrabold text-gray-900">Nueva versión disponible</p>
+                  <p className="text-sm text-gray-500 mt-1 leading-relaxed">
+                    Hay una actualización requerida del sistema. Por favor actualiza para continuar.
+                  </p>
+                </div>
+                <button
+                  onClick={doUpdate}
+                  className="w-full py-3.5 rounded-xl font-bold text-white text-sm bg-primary active:scale-[0.98] transition-all"
+                >
+                  Actualizar ahora
+                </button>
+              </div>
             </div>
-            <div>
-              <p className="text-base font-extrabold text-gray-900">Nueva versión disponible</p>
-              <p className="text-sm text-gray-500 mt-1 leading-relaxed">
-                Hay una actualización requerida del sistema. Por favor actualiza para continuar.
-              </p>
-            </div>
-            <button
-              onClick={() => {
-                logout()
-                setTimeout(() => window.location.reload(true), 300)
-              }}
-              className="w-full py-3.5 rounded-xl font-bold text-white text-sm bg-primary active:scale-[0.98] transition-all"
-            >
-              Actualizar ahora
-            </button>
-          </div>
-        </div>
+          )}
+
+          {/* Scenario 3: active order, not in form → non-intrusive banner */}
+          {hasOrder && !isInForm && (
+            <UpdateBanner onUpdate={doUpdate} />
+          )}
+
+          {/* Scenario 4: mid-documentation → floating toast */}
+          {hasOrder && isInForm && (
+            <UpdateToast onUpdate={doUpdate} />
+          )}
+        </>
       )}
       <ConnectivityBanner />
       <Routes>

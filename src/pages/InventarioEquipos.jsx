@@ -33,6 +33,7 @@ export default function InventarioEquipos() {
     setCroquisEsquematico,
     setCroquisNiveles,
     setPlanoPlanta, resetFormDraft, finalizeForm } = useAppStore()
+  const checkForceUpdate = useAppStore((s) => s.checkForceUpdateAfterFinalize)
 
   const currentStepId = useMemo(() => {
     if (step && equipmentInventorySteps.some(s => s.id === step)) return step
@@ -290,8 +291,10 @@ case 'drawing-template':
           setShowConfirm(false)
           try {
             await finalizeForm('inventario')
-            showToast('¡Inventario enviado!', 'success')
-            setTimeout(() => navigate('/'), 3000)
+            if (!checkForceUpdate()) {
+              showToast('¡Inventario enviado!', 'success')
+              setTimeout(() => navigate('/'), 3000)
+            }
           } catch (e) {
             showToast('Error al finalizar', 'error')
           }

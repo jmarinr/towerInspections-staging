@@ -7,7 +7,7 @@ const getDefaultDate = () => new Date().toISOString().split('T')[0]
 const getDefaultTime = () => new Date().toTimeString().slice(0, 5)
 
 // Versión mostrada en UI y enviada como metadata a Supabase
-const APP_VERSION_DISPLAY = '2.5.89'
+const APP_VERSION_DISPLAY = '2.5.90'
 const FORM_CODE_ADDITIONAL = 'additional-photo-report'
 
 const isDataUrlString = (value) =>
@@ -580,6 +580,21 @@ export const useAppStore = create(
           const aq = Array.isArray(state.assetUploadQueue) ? state.assetUploadQueue : []
           return { assetUploadQueue: aq.filter(a => a.formCode !== cfg.code) }
         })
+      },
+
+      // Called after finalize to check if update is pending
+      checkForceUpdateAfterFinalize: () => {
+        const { forceUpdate } = get()
+        if (forceUpdate) {
+          console.log('[VersionCheck] scenario 4: form finalized with pending update — reloading')
+          import('../lib/supabaseClient').then(({ supabase }) => {
+            supabase.auth.signOut().catch(() => {})
+          }).catch(() => {})
+          set({ session: null, activeVisit: null, completedForms: [], formDataOwnerId: null, selectedSite: null })
+          setTimeout(() => window.location.reload(true), 800)
+          return true
+        }
+        return false
       },
 
       finalizeForm: async (formKey) => {

@@ -5,7 +5,7 @@ export default function SplashScreen() {
         PTI
       </div>
       <div className="text-white text-lg font-semibold mb-2">PTI Inspect</div>
-      <div className="text-white/60 text-sm">Sistema de Inspección v2.5.89</div>
+      <div className="text-white/60 text-sm">Sistema de Inspección v2.5.90</div>
       <div className="mt-10 w-8 h-8 border-3 border-white/20 border-t-accent rounded-full animate-spin" />
     </div>
   )

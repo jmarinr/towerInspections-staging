@@ -46,7 +46,7 @@ export default function Login() {
     e.preventDefault()
     setError('')
     setBlockedByDevice(false)
-    console.log('[Login] v2.5.89 — deviceId:', deviceId.slice(0, 8))
+    console.log('[Login] v2.5.90 — deviceId:', deviceId.slice(0, 8))
 
     if (!email.trim())    { setError('Ingrese su correo electrónico'); return }
     if (!password.trim()) { setError('Ingrese su contraseña'); return }
@@ -307,7 +307,7 @@ export default function Login() {
         </form>
       )}
 
-      <p className="text-xs text-gray-400 mt-6">PTI Inspect v2.5.89</p>
+      <p className="text-xs text-gray-400 mt-6">PTI Inspect v2.5.90</p>
       <p className="text-xs text-gray-400 mt-1">
         by{' '}
         <a href="http://henkancx.com" target="_blank" rel="noopener noreferrer"

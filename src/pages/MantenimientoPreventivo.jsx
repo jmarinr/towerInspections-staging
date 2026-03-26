@@ -28,6 +28,7 @@ export default function MantenimientoPreventivo() {
     completeMaintenanceStep,
     showToast,
     formMeta, resetFormDraft, finalizeForm } = useAppStore()
+  const checkForceUpdate = useAppStore((s) => s.checkForceUpdateAfterFinalize)
 
   const [showConfirm, setShowConfirm] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -228,8 +229,10 @@ export default function MantenimientoPreventivo() {
 
     try {
       await finalizeForm('mantenimiento')
-      showToast('¡Mantenimiento enviado!', 'success')
-      navigate('/')
+      if (!checkForceUpdate()) {
+        showToast('¡Mantenimiento enviado!', 'success')
+        setTimeout(() => navigate('/'), 3000)
+      }
     } catch (e) {
       console.error('[Mantenimiento] finalize error:', e)
       showToast('Error al enviar. Intente de nuevo.', 'error')
