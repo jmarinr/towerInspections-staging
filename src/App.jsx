@@ -17,7 +17,7 @@ import Toast from './components/ui/Toast'
 import ConnectivityBanner from './components/ui/ConnectivityBanner'
 import { useAppStore } from './hooks/useAppStore'
 
-const APP_VERSION = '2.5.87'
+const APP_VERSION = '2.5.88'
 import { startSupabaseBackgroundSync } from './lib/supabaseSync'
 import { supabase } from './lib/supabaseClient'
 import RequireAuth from './components/auth/RequireAuth'
@@ -57,7 +57,7 @@ function App() {
         const { data, error } = await supabase
           .from('app_config')
           .select('value')
-          .eq('key', 'min_version')
+          .eq('key', import.meta.env.VITE_SANDBOX === 'true' ? 'min_version_sandbox' : 'min_version')
           .single()
         if (error || !data?.value) return
 
