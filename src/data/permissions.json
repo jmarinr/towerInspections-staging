@@ -1,0 +1,70 @@
+{
+  "users": {
+    "101010": {
+      "pin": "1010",
+      "role": "testing",
+      "name": "Testing"
+    },
+    "inspector1": {
+      "pin": "1001",
+      "role": "inspector-beta",
+      "name": "Inspector 1"
+    },
+    "inspector2": {
+      "pin": "1002",
+      "role": "inspector",
+      "name": "Inspector 2"
+    },
+    "inspector3": {
+      "pin": "1003",
+      "role": "inspector",
+      "name": "Inspector 3"
+    },
+    "supervisor1": {
+      "pin": "2001",
+      "role": "supervisor",
+      "name": "Supervisor 1"
+    },
+    "supervisor2": {
+      "pin": "2002",
+      "role": "supervisor",
+      "name": "Supervisor 2"
+    }
+  },
+  "roles": {
+    "testing": {
+      "label": "Testing",
+      "forms": [
+        "*"
+      ]
+    },
+    "inspector": {
+      "label": "Inspector",
+      "forms": [
+        "mantenimiento",
+        "mantenimiento-ejecutado",
+        "equipment-v2",
+        "sistema-ascenso",
+        "grounding-system-test",
+        "additional-photo-report"
+      ]
+    },
+    "supervisor": {
+      "label": "Supervisor",
+      "forms": [
+        "additional-photo-report"
+      ]
+    },
+    "inspector-beta": {
+      "label": "Inspector",
+      "forms": [
+        "mantenimiento",
+        "mantenimiento-ejecutado",
+        "equipment-v2",
+        "sistema-ascenso",
+        "grounding-system-test",
+        "additional-photo-report"
+      ]
+    }
+  }
+}
