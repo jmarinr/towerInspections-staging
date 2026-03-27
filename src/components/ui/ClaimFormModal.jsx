@@ -33,14 +33,14 @@ export default function ClaimFormModal({
     if (loading) return
     setLoading(true)
 
-    // Free form: no submission row exists yet in DB.
-    // Just proceed — triggerAutosave will create it with assigned_to on first save.
+    // Free form: no submission row yet — form is empty, just proceed.
     if (!submissionId) {
       const newAssignment = {
         assignedTo: session.username,
         assignmentVersion: 1,
         assignedAt: new Date().toISOString(),
         submissionId: null,
+        needsHydration: false,
       }
       updateFormAssignment(formCode, newAssignment)
       showToast('Formulario tomado. Puedes empezar a documentar.', 'success')
@@ -59,6 +59,7 @@ export default function ClaimFormModal({
           assignmentVersion: (currentVersion ?? 0) + 1,
           assignedAt: new Date().toISOString(),
           submissionId,
+          needsHydration: isReassign,
         }
         updateFormAssignment(formCode, newAssignment)
         showToast(

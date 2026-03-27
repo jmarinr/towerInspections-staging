@@ -7,7 +7,7 @@ import {
 } from 'lucide-react'
 import { useAppStore } from '../hooks/useAppStore'
 import { filterFormsByRole } from '../lib/auth'
-import { closeSiteVisit, fetchVisitSubmissions, fetchSubmissionAssets, fetchVisitAssignments } from '../lib/siteVisitService'
+import { closeSiteVisit, fetchVisitSubmissions, fetchSubmissionAssets, fetchVisitAssignments, fetchSubmissionForForm } from '../lib/siteVisitService'
 import ClaimFormModal from '../components/ui/ClaimFormModal'
 
 const ALL_FORMS = [
@@ -57,6 +57,28 @@ export default function Home() {
   const markFormCompleted = useAppStore((s) => s.markFormCompleted)
   const formMeta = useAppStore((s) => s.formMeta)
   const hydrateFormFromSupabase = useAppStore((s) => s.hydrateFormFromSupabase)
+
+  // Re-hydrate a single form after claim — loads the previous owner's data into store
+  const rehydrateForm = async (formCode) => {
+    if (!activeVisit?.id || String(activeVisit.id).startsWith('local-')) return
+    try {
+      const submission = await fetchSubmissionForForm(activeVisit.id, formCode)
+      if (!submission) return
+      let assets = []
+      if (submission.id) {
+        try {
+          const assetsMap = await fetchSubmissionAssets([submission.id])
+          assets = assetsMap[submission.id] || []
+        } catch (_) {}
+      }
+      const inner = submission.payload?.payload || submission.payload
+      if (inner?.data) {
+        hydrateFormFromSupabase(formCode, submission.payload, assets)
+      }
+    } catch (e) {
+      console.warn('[Home] rehydrateForm failed', e?.message)
+    }
+  }
   const resetAllForms = useAppStore((s) => s.resetAllForms)
   const formDataOwnerId = useAppStore((s) => s.formDataOwnerId)
   const formAssignments = useAppStore((s) => s.formAssignments)
@@ -433,9 +455,12 @@ export default function Home() {
         currentOwner={claimModal.currentOwner}
         submissionId={claimModal.submissionId}
         currentVersion={claimModal.currentVersion}
-        onSuccess={() => {
-          // After successful claim, navigate to the form
+        onSuccess={async (assignment) => {
           const form = visibleForms.find((f) => FORM_ID_TO_CODE[f.id] === claimModal.formCode || f.id === claimModal.formCode)
+          // Re-hydrate with previous owner's data before navigating
+          if (assignment?.needsHydration) {
+            await rehydrateForm(claimModal.formCode)
+          }
           if (form) navigate(form.route)
         }}
       />
