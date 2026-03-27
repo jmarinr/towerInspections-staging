@@ -272,7 +272,15 @@ export default function Home() {
               <span className="text-3xl font-black text-primary">PTI</span>
             </div>
           </div>
-          <h1 className="text-xl font-bold tracking-tight">PTI Inspect</h1>
+          <div className="flex items-center justify-center gap-2">
+            <h1 className="text-xl font-bold tracking-tight">PTI Inspect</h1>
+            {import.meta.env.VITE_APP_ENV === 'sandbox' && (
+              <span className="px-2 py-0.5 rounded-md text-[10px] font-bold tracking-widest uppercase"
+                style={{ background: 'rgba(0,200,160,0.15)', color: '#00C8A0', border: '1px solid rgba(0,200,160,0.3)' }}>
+                Sandbox
+              </span>
+            )}
+          </div>
           <p className="text-white/70 text-sm mt-0.5">Sistema de Inspección v2.5.86</p>
           {session && (
             <div className="mt-2 flex items-center gap-1.5 bg-white/15 rounded-full px-3 py-1">

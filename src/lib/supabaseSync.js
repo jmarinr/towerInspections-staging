@@ -190,7 +190,7 @@ export async function ensureSubmissionId(formCode, formVersion = '1.2.1') {
 
   const { data, error } = await supabase
     .from('submissions')
-    .upsert(row, { onConflict: 'org_code,device_id,form_code,site_visit_id' })
+    .upsert(row, { onConflict: 'site_visit_id,form_code' })
     .select('id')
     .single();
 
@@ -330,7 +330,7 @@ export async function flushSupabaseQueues({ formCode } = {}) {
         // Each order+form+device gets its own row
         const { error } = await supabase
           .from('submissions')
-          .upsert(row, { onConflict: 'org_code,device_id,form_code,site_visit_id' });
+          .upsert(row, { onConflict: 'site_visit_id,form_code' });
 
         if (error) throw error;
 

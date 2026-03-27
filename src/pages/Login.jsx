@@ -46,7 +46,7 @@ export default function Login() {
     e.preventDefault()
     setError('')
     setBlockedByDevice(false)
-    console.log('[Login] v2.5.85 — deviceId:', deviceId.slice(0, 8))
+    console.log('[Login] v2.5.86 — deviceId:', deviceId.slice(0, 8))
 
     if (!email.trim())    { setError('Ingrese su correo electrónico'); return }
     if (!password.trim()) { setError('Ingrese su contraseña'); return }
@@ -178,7 +178,15 @@ export default function Login() {
         <div className="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
           <span className="text-3xl">🗼</span>
         </div>
-        <h1 className="text-2xl font-extrabold text-gray-900">PTI Inspect</h1>
+        <div className="flex items-center justify-center gap-2">
+              <h1 className="text-2xl font-extrabold text-gray-900">PTI Inspect</h1>
+              {import.meta.env.VITE_APP_ENV === 'sandbox' && (
+                <span className="px-2 py-0.5 rounded-md text-[10px] font-bold tracking-widest uppercase"
+                  style={{ background: '#E0FAF4', color: '#007A63', border: '1px solid #99F6E4' }}>
+                  Sandbox
+                </span>
+              )}
+            </div>
         <p className="text-sm text-gray-500 mt-1">Ingrese sus credenciales</p>
       </div>
 
@@ -302,7 +310,7 @@ export default function Login() {
         </form>
       )}
 
-      <p className="text-xs text-gray-400 mt-6">PTI Inspect v2.5.85</p>
+      <p className="text-xs text-gray-400 mt-6">PTI Inspect v2.5.86{import.meta.env.VITE_APP_ENV === 'sandbox' ? ' · Sandbox' : ''}</p>
       <p className="text-xs text-gray-400 mt-1">
         by{' '}
         <a href="http://henkancx.com" target="_blank" rel="noopener noreferrer"
