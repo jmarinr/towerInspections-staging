@@ -304,6 +304,15 @@ export async function flushSupabaseQueues({ formCode } = {}) {
           ? item.payload.site_visit_id
           : NIL_UUID;
 
+        // v2.5.86 — include assigned_to if this form was claimed by current user
+        // Read from window.__ptiStore if available (set by useAppStore on init)
+        let claimedBy = null
+        try {
+          const st = window.__ptiStore?.getState?.()
+          const a = st?.formAssignments?.[canonicalFormCode]
+          if (a?.assignedTo && a.assignedTo === st?.session?.username) claimedBy = a.assignedTo
+        } catch (_) {}
+
         const row = {
           org_code: item.payload?.org_code || ORG_CODE,
           device_id: deviceId,
@@ -313,6 +322,7 @@ export async function flushSupabaseQueues({ formCode } = {}) {
           site_visit_id: siteVisitId,
           submitted_by_user_id: item.payload?.submitted_by_user_id || null,
           finalized: item.payload?.payload?.finalized === true,
+          ...(claimedBy ? { assigned_to: claimedBy } : {}),
           // Site catalog references — only include if columns exist in DB
           // Run migration first: ALTER TABLE submissions ADD COLUMN IF NOT EXISTS site_id uuid, region_id uuid
           // site_id: item.payload?.payload?.data?.siteInfo?.siteRef || null,

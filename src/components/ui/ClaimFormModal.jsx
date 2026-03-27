@@ -30,8 +30,27 @@ export default function ClaimFormModal({
   const isReassign = mode === 'reassign'
 
   const handleConfirm = async () => {
-    if (loading || !submissionId) return
+    if (loading) return
     setLoading(true)
+
+    // Free form: no submission row exists yet in DB.
+    // Just proceed — triggerAutosave will create it with assigned_to on first save.
+    if (!submissionId) {
+      const newAssignment = {
+        assignedTo: session.username,
+        assignmentVersion: 1,
+        assignedAt: new Date().toISOString(),
+        submissionId: null,
+      }
+      updateFormAssignment(formCode, newAssignment)
+      showToast('Formulario tomado. Puedes empezar a documentar.', 'success')
+      setLoading(false)
+      onSuccess?.(newAssignment)
+      onClose()
+      return
+    }
+
+    // Occupied form: use atomic RPC to claim/reassign
     try {
       const claimed = await claimFormRPC(submissionId, session.username, currentVersion)
       if (claimed) {
