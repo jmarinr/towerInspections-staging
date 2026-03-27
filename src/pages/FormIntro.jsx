@@ -113,6 +113,10 @@ export default function FormIntro() {
 
   const cfg = useMemo(() => FORM_MAP[formId], [formId])
 
+  const isFormWritableStore = useAppStore((s) => s.isFormWritable)
+  const formAssignments = useAppStore((s) => s.formAssignments)
+  const session = useAppStore((s) => s.session)
+
   const {
     setFormMeta,
     showToast,
@@ -131,11 +135,26 @@ export default function FormIntro() {
     selectedSite,
   } = useAppStore()
 
+  // Canonical form_code map (normalizedId → supabase form_code)
+  const normalizedToCode = {
+    'inspeccion': 'inspeccion', 'mantenimiento': 'mantenimiento',
+    'equipment': 'inventario', 'equipment-v2': 'inventario-v2',
+    'mantenimiento-ejecutado': 'mantenimiento-ejecutado',
+    'sistema-ascenso': 'sistema-ascenso', 'grounding-system-test': 'puesta-tierra',
+    'additional-photo-report': 'additional-photo-report',
+  }
+
   // Check if this form has previous data
   const normalizedId = useMemo(() => {
     if (!formId) return ''
     return formId === 'pm-executed' ? 'mantenimiento-ejecutado' : formId
   }, [formId])
+
+  // v2.5.86 — assignment / writable state
+  const formCodeCanon = normalizedToCode[normalizedId] || normalizedId
+  const assignment = formAssignments?.[formCodeCanon]
+  const writable = isFormWritableStore(formCodeCanon)
+  const assignedToOther = assignment?.assignedTo && assignment.assignedTo !== session?.username
 
   // Check Supabase directly for finalized status — source of truth
   useEffect(() => {
@@ -361,6 +380,22 @@ export default function FormIntro() {
     <div className="min-h-screen bg-gray-50">
       <AppHeader title={cfg.title} showBack onBack={() => navigate('/')} />
 
+      {/* v2.5.86 — Mode Banner */}
+      {!writable && assignedToOther && (
+        <div className="bg-amber-50 border-b border-amber-200 px-4 py-3 flex items-center gap-3">
+          <div className="flex-1">
+            <p className="text-xs font-bold text-amber-800">Solo lectura</p>
+            <p className="text-xs text-amber-700">{assignment.assignedTo} está editando este formulario</p>
+          </div>
+        </div>
+      )}
+      {writable && assignment?.assignedTo && (
+        <div className="bg-teal-50 border-b border-teal-200 px-4 py-2.5 flex items-center gap-3">
+          <p className="text-xs font-bold text-teal-800 flex-1">Modo escritura — asignado a ti</p>
+          <span className="text-[10px] text-teal-600">● Guardando</span>
+        </div>
+      )}
+
       <div className="max-w-xl mx-auto px-4 pt-6 pb-28">
 
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
@@ -400,17 +435,33 @@ export default function FormIntro() {
             </ul>
           </div>
 
-          <button
-            type="button"
-            className="mt-6 w-full px-4 py-3 rounded-2xl bg-gradient-to-r from-blue-700 to-blue-500 text-white font-semibold shadow-sm active:scale-[0.99] disabled:opacity-70"
-            onClick={handleStart}
-            disabled={loading || (!selectedSite && !activeVisit?.site_id)}
-          >
-            {loading ? 'Iniciando…'
-              : (!selectedSite && !activeVisit?.site_id) ? 'Seleccione un sitio primero'
-              : hasPreviousData ? 'Continuar / Reiniciar →'
-              : 'Iniciar Formulario →'}
-          </button>
+          {/* v2.5.86 — show different button based on write access */}
+          {assignedToOther ? (
+            <div className="mt-6 space-y-2">
+              <button
+                type="button"
+                className="w-full px-4 py-3 rounded-2xl bg-gray-100 border border-gray-200 text-gray-700 font-semibold active:scale-[0.99]"
+                onClick={() => navigate(cfg.route)}
+              >
+                👁 Ver formulario (solo lectura)
+              </button>
+              <p className="text-xs text-center text-amber-700">
+                Para editar, usa el botón "Reasignarme" en la lista de formularios.
+              </p>
+            </div>
+          ) : (
+            <button
+              type="button"
+              className="mt-6 w-full px-4 py-3 rounded-2xl bg-gradient-to-r from-blue-700 to-blue-500 text-white font-semibold shadow-sm active:scale-[0.99] disabled:opacity-70"
+              onClick={handleStart}
+              disabled={loading || (!selectedSite && !activeVisit?.site_id)}
+            >
+              {loading ? 'Iniciando…'
+                : (!selectedSite && !activeVisit?.site_id) ? 'Seleccione un sitio primero'
+                : hasPreviousData ? 'Continuar / Reiniciar →'
+                : 'Iniciar Formulario →'}
+            </button>
+          )}
         </div>
       </div>
 

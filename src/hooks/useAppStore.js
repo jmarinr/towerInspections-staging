@@ -7,7 +7,7 @@ const getDefaultDate = () => new Date().toISOString().split('T')[0]
 const getDefaultTime = () => new Date().toTimeString().slice(0, 5)
 
 // Versión mostrada en UI y enviada como metadata a Supabase
-const APP_VERSION_DISPLAY = '2.5.85'
+const APP_VERSION_DISPLAY = '2.5.86'
 const FORM_CODE_ADDITIONAL = 'additional-photo-report'
 
 const isDataUrlString = (value) =>
@@ -260,7 +260,11 @@ export const useAppStore = create(
 
       // ============ ACTIVE VISIT (ORDER) ============
       activeVisit: null,
-      selectedSite: null,  // { id, site_id, name, province, height_m, region_id } // site_visits row from Supabase
+      selectedSite: null,  // { id, site_id, name, province, height_m, region_id }
+      // v2.5.86 — collaborative inspection: tracks who has each form assigned
+      // keyed by canonical form_code e.g. 'mantenimiento', 'inventario-v2'
+      // { assignedTo, assignmentVersion, assignedAt, submissionId }
+      formAssignments: {}, // keyed by canonical form_code: { assignedTo, assignmentVersion, assignedAt, submissionId }
       completedForms: [], // form IDs completed in current visit (e.g. ['inspeccion', 'mantenimiento'])
       formDataOwnerId: null, // ID of the order that owns the current form data in localStorage
 
@@ -367,7 +371,7 @@ export const useAppStore = create(
           try { get().resetFormDraft(key) } catch (_) {}
         }
         // Also clear formMeta (start timestamps) and owner tracking
-        set({ formMeta: {}, formDataOwnerId: null })
+        set({ formMeta: {}, formDataOwnerId: null, formAssignments: {} })
       },
       markFormCompleted: (formId) => set((state) => {
         const list = state.completedForms || []
@@ -405,6 +409,28 @@ export const useAppStore = create(
       },
       hideToast: () => set({ toast: { show: false, message: '', type: 'info' } }),
 
+      // v2.5.86 — form assignment actions
+      /** Replace the entire assignments map (called after hydration/polling) */
+      setFormAssignments: (assignments) => set({ formAssignments: assignments }),
+
+      /** Update a single form's assignment (called after claim_form RPC succeeds) */
+      updateFormAssignment: (formCode, assignment) => set((state) => ({
+        formAssignments: { ...(state.formAssignments || {}), [formCode]: assignment }
+      })),
+
+      /**
+       * Returns true if the current user can write this form.
+       * - assigned_to === null → free, anyone can write (includes original inspector)
+       * - assigned_to === session.username → this user has it
+       * - assigned_to === someone_else → read-only for current user
+       */
+      isFormWritable: (formCode) => {
+        const state = get()
+        const a = state.formAssignments?.[formCode]
+        if (!a?.assignedTo) return true
+        return a.assignedTo === state.session?.username
+      },
+
       // ============ AUTOSAVE ============
       showAutosave: false,
       triggerAutosave: (formCode) => {
@@ -425,6 +451,20 @@ export const useAppStore = create(
         }
         const formId = formIdMap[formCode]
         if (formId && (get().completedForms || []).includes(formId)) return
+
+        // v2.5.86 — block autosave if form is assigned to someone else
+        try {
+          const canonCheck = get().getSupabasePayloadForForm(formCode)
+          const formCodeCanon = canonCheck?.form_code
+          if (formCodeCanon) {
+            const a = get().formAssignments?.[formCodeCanon]
+            if (a?.assignedTo && a.assignedTo !== get().session?.username) {
+              console.warn('[Autosave] blocked — form assigned to', a.assignedTo)
+              set({ showAutosave: false })
+              return
+            }
+          }
+        } catch (_) {}
 
         try {
           if (formCode) {
@@ -1641,6 +1681,8 @@ resetSafetyClimbingData: () => set({ safetyClimbingData: {}, safetyClimbingStep:
           toast: undefined,
           _toastTimer: undefined,
           showAutosave: undefined,
+          // Never persist formAssignments — always comes from server on mount
+          formAssignments: undefined,
           // Never persist transient connectivity state
           isOnline: undefined,
           syncStatus: undefined,
