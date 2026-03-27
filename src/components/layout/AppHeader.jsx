@@ -1,6 +1,4 @@
 import { useEffect, useRef, useState } from 'react'
-
-const IS_SANDBOX = import.meta.env.VITE_SANDBOX === 'true'
 import { ChevronLeft, Info, LogOut, MoreVertical } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useAppStore } from '../../hooks/useAppStore'
@@ -43,14 +41,7 @@ export default function AppHeader({ title, subtitle, badge, progress, onMenuClic
           <ChevronLeft size={20} />
         </button>
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <h1 className="text-base sm:text-[17px] font-bold text-white truncate">{title}</h1>
-            {IS_SANDBOX && (
-              <span className="bg-amber-400 text-amber-900 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase flex-shrink-0">
-                sandbox
-              </span>
-            )}
-          </div>
+          <h1 className="text-base sm:text-[17px] font-bold text-white truncate">{title}</h1>
           <div className="text-[11px] sm:text-xs text-white/70 flex items-center gap-2 flex-wrap">
             <span className="truncate">{subtitle}</span>
             {badge && <span className="bg-accent px-2 py-0.5 rounded-lg text-[10px] font-bold flex-shrink-0">{badge}</span>}

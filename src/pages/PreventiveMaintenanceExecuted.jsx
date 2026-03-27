@@ -370,10 +370,8 @@ export default function PreventiveMaintenanceExecuted() {
           setShowConfirm(false)
           try {
             await finalizeForm('mantenimiento-ejecutado')
-            if (!checkForceUpdate()) {
-              showToast('¡Mantenimiento ejecutado enviado!', 'success')
-              setTimeout(() => navigate('/'), 3000)
-            }
+            showToast('¡Mantenimiento ejecutado enviado!', 'success')
+          setTimeout(() => navigate('/'), 3000)
           } catch (e) {
             showToast('Error al finalizar', 'error')
           }

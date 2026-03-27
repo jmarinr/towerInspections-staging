@@ -287,10 +287,8 @@ export default function SafetyClimbingDevice() {
         onConfirm={async () => {
           setShowConfirm(false)
           await finalizeForm('safety-system')
-    if (!checkForceUpdate()) {
-      showToast('¡Formulario enviado!', 'success')
-      setTimeout(() => navigate('/'), 3000)
-    }
+    showToast('¡Formulario enviado!', 'success')
+    setTimeout(() => navigate('/'), 3000)
         }}
         loading={loading}
       />

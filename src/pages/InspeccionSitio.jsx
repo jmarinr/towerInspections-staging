@@ -22,7 +22,6 @@ export default function InspeccionSitio() {
 
   const { step } = useParams()
   const { inspectionData, showToast, formMeta, resetFormDraft, finalizeForm } = useAppStore()
-  const checkForceUpdate = useAppStore((s) => s.checkForceUpdateAfterFinalize)
 
   const currentStepId = step || inspectionSections[0].id
   const currentStepIndex = inspectionSections.findIndex(s => s.id === currentStepId)
@@ -124,10 +123,8 @@ export default function InspeccionSitio() {
         onConfirm={async () => {
           setShowConfirm(false)
           await finalizeForm('inspeccion')
-          if (!checkForceUpdate()) {
-            showToast('¡Inspección enviada!', 'success')
-            setTimeout(() => navigate('/'), 3000)
-          }
+        showToast('¡Inspección enviada!', 'success')
+        setTimeout(() => navigate('/'), 3000)
         }}
         loading={loading}
       />
