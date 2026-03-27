@@ -292,8 +292,8 @@ export default function OrderScreen() {
                           {new Date(v.started_at).toLocaleDateString('es', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
                         </span>
                         <button onClick={() => handleJoinVisit(v)}
-                          className="w-full py-2.5 rounded-xl bg-primary text-white text-sm font-bold active:scale-[0.98] transition-all flex items-center justify-center gap-2">
-                          <Users size={14} /> Unirse y colaborar
+                          className="w-full py-2.5 rounded-xl border border-gray-200 bg-white text-gray-700 text-sm font-semibold active:bg-gray-50 transition-all flex items-center justify-center gap-2">
+                          <Users size={14} className="text-gray-400" /> Unirse y colaborar
                         </button>
                       </div>
                     </div>

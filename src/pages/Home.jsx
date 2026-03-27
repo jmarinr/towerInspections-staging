@@ -392,14 +392,20 @@ export default function Home() {
                 }
 
                 return (
-                  <div key={form.id}>
+                  <div key={form.id} className={`rounded-2xl overflow-hidden shadow-sm ${
+                    isCompleted ? 'opacity-70' :
+                    assignedToOther ? 'border border-gray-200' :
+                    isCollaborator && isFreeForCollab ? 'border border-gray-200' :
+                    ''
+                  }`}>
                     <button
                       onClick={handleCardClick}
                       disabled={isCompleted}
-                      className={`w-full rounded-2xl p-4 flex items-center gap-4 shadow-sm border text-left transition-all ${leftBorder} ${
-                        isCompleted          ? 'bg-gray-50 border-gray-200 opacity-70 cursor-not-allowed'
-                        : assignedToOther    ? 'bg-amber-50/30 border-amber-200 cursor-pointer'
-                        : 'bg-white border-gray-100 active:scale-[0.98]'
+                      className={`w-full p-4 flex items-center gap-4 text-left transition-all ${leftBorder} ${
+                        isCompleted          ? 'bg-gray-50 cursor-not-allowed'
+                        : assignedToOther    ? 'bg-white cursor-pointer'
+                        : isCollaborator && isFreeForCollab ? 'bg-white active:scale-[0.98]'
+                        : 'bg-white rounded-2xl shadow-sm border border-gray-100 active:scale-[0.98]'
                       }`}
                     >
                       <div className={`w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0 shadow-md ${
@@ -431,36 +437,40 @@ export default function Home() {
                        : <ChevronRight size={20} className="text-gray-300 flex-shrink-0" />}
                     </button>
 
-                    {/* ── Action buttons under the card (collaboration only) ── */}
+                    {/* ── Action buttons — integrated into card bottom ── */}
                     {!isCompleted && !hydrating && (
                       <>
-                        {/* Free form for collaborator → Take button */}
+                        {/* Free form for collaborator → Take */}
                         {isCollaborator && isFreeForCollab && (
-                          <div className="px-1 -mt-1.5 mb-0.5">
-                            <button
-                              onClick={() => openClaimModal(form, 'take')}
-                              className="w-full py-2.5 rounded-b-2xl bg-green-600 text-white text-xs font-bold active:scale-[0.99] transition-all"
-                            >
-                              + Tomar e iniciar
-                            </button>
+                          <div className="px-4 pb-3 -mt-1">
+                            <div className="border-t border-gray-100 pt-3">
+                              <button
+                                onClick={() => openClaimModal(form, 'take')}
+                                className="w-full py-2 rounded-xl bg-gray-900 text-white text-xs font-semibold tracking-wide active:opacity-80 transition-all"
+                              >
+                                Tomar e iniciar
+                              </button>
+                            </div>
                           </div>
                         )}
 
-                        {/* Occupied form → View + Reassign for anyone who isn't the current owner */}
+                        {/* Occupied form → Ver + Reasignarme */}
                         {assignedToOther && (
-                          <div className="flex gap-2 px-1 -mt-1.5 mb-0.5">
-                            <button
-                              onClick={() => navigate(form.route)}
-                              className="w-24 py-2.5 rounded-bl-2xl bg-gray-100 text-gray-700 text-xs font-bold active:scale-[0.99] flex items-center justify-center gap-1"
-                            >
-                              <Eye size={12} /> Ver
-                            </button>
-                            <button
-                              onClick={() => openClaimModal(form, 'reassign')}
-                              className="flex-1 py-2.5 rounded-br-2xl bg-amber-500 text-white text-xs font-bold active:scale-[0.99] transition-all"
-                            >
-                              Reasignarme
-                            </button>
+                          <div className="px-4 pb-3 -mt-1">
+                            <div className="border-t border-gray-100 pt-3 flex gap-2">
+                              <button
+                                onClick={() => navigate(form.route)}
+                                className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 text-gray-500 text-xs font-semibold active:opacity-70 transition-all"
+                              >
+                                <Eye size={11} /> Ver
+                              </button>
+                              <button
+                                onClick={() => openClaimModal(form, 'reassign')}
+                                className="flex-1 py-2 rounded-xl border border-amber-200 bg-amber-50 text-amber-700 text-xs font-semibold active:opacity-80 transition-all"
+                              >
+                                Reasignarme
+                              </button>
+                            </div>
                           </div>
                         )}
                       </>
