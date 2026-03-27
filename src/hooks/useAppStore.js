@@ -420,15 +420,27 @@ export const useAppStore = create(
 
       /**
        * Returns true if the current user can write this form.
-       * - assigned_to === null → free, anyone can write (includes original inspector)
-       * - assigned_to === session.username → this user has it
-       * - assigned_to === someone_else → read-only for current user
+       *
+       * Rules:
+       * - If explicitly assigned to me → writable
+       * - If explicitly assigned to someone else → read-only
+       * - If no explicit assignment (null):
+       *     - Order owner → writable (their own forms)
+       *     - Collaborator → NOT writable (must claim first)
        */
       isFormWritable: (formCode) => {
         const state = get()
         const a = state.formAssignments?.[formCode]
-        if (!a?.assignedTo) return true
-        return a.assignedTo === state.session?.username
+        const myUsername = state.session?.username
+        const orderOwner = state.activeVisit?.inspector_username
+        const isOwner = !!myUsername && myUsername === orderOwner
+
+        if (a?.assignedTo) {
+          // Explicit assignment — only writable if it's mine
+          return a.assignedTo === myUsername
+        }
+        // No explicit assignment — owner can write, collaborator must claim
+        return isOwner
       },
 
       // ============ AUTOSAVE ============

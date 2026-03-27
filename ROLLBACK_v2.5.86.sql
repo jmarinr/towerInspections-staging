@@ -44,3 +44,22 @@ WHERE table_schema = 'public' AND table_name = 'submissions'
 SELECT routine_name FROM information_schema.routines
 WHERE routine_schema = 'public' AND routine_name = 'claim_form';
 -- Debe devolver 0 filas.
+
+
+-- ── 5. Revertir policy submissions_select ───────────────────────────────────
+-- La policy fue modificada en v2.5.86 para permitir que inspectores
+-- del mismo org puedan ver submissions de colegas (necesario para colaboración).
+-- Original (solo ve los tuyos o los de tu empresa si eres supervisor/admin):
+
+DROP POLICY IF EXISTS submissions_select ON public.submissions;
+
+CREATE POLICY submissions_select ON public.submissions
+  FOR SELECT TO public
+  USING (
+    ((get_my_role() = 'admin'::text)
+    OR ((get_my_role() = 'supervisor'::text) AND (org_code IN (
+      SELECT companies.org_code FROM companies
+      WHERE companies.id = get_my_company_id()
+    )))
+    OR (submitted_by_user_id = auth.uid()))
+  );

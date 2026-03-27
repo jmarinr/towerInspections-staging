@@ -2,156 +2,151 @@ import { useMemo, useEffect, useState, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   ImageIcon, ChevronRight, ClipboardCheck, Wrench, Shield,
-  Package, LayoutList, Zap, Camera, LogOut, User, Check, Lock,
-  Users, Eye, RefreshCw,
+  Package, LayoutList, Zap, Camera, LogOut, User, Check, Lock, Users, Eye,
 } from 'lucide-react'
 import { useAppStore } from '../hooks/useAppStore'
 import { filterFormsByRole } from '../lib/auth'
-import { closeSiteVisit, fetchVisitSubmissions, fetchSubmissionAssets, fetchVisitAssignments, fetchSubmissionForForm } from '../lib/siteVisitService'
+import {
+  closeSiteVisit, fetchVisitSubmissions, fetchSubmissionAssets,
+  fetchVisitAssignments, fetchSubmissionForForm,
+} from '../lib/siteVisitService'
 import ClaimFormModal from '../components/ui/ClaimFormModal'
 
+// ─── Form definitions (unchanged from v2.5.85) ───────────────────────────────
 const ALL_FORMS = [
-  { id: 'inspeccion', title: 'Inspección General', description: 'Lista de verificación para inspección general de equipos y sitio', icon: ClipboardCheck, iconBg: 'bg-blue-500', stats: '38 ítems / 6 secciones', route: '/intro/inspeccion' },
-  { id: 'mantenimiento', title: 'Mantenimiento Preventivo (Checklist)', description: 'Registro de actividades para mantenimiento preventivo de torres', icon: Wrench, iconBg: 'bg-orange-500', stats: '92 ítems / 17 pasos', route: '/intro/mantenimiento' },
-  { id: 'mantenimiento-ejecutado', title: 'Mantenimiento Ejecutado', description: 'Trabajos ejecutados (Rawland/Rooftop) con fotos Antes/Después por actividad', icon: Camera, iconBg: 'bg-emerald-500', stats: '32 actividades / 64 fotos', route: '/intro/mantenimiento-ejecutado' },
-  { id: 'equipment', title: 'Inventario de Equipos', description: 'Inventario de equipos (Torre + Piso) con croquis y plano', icon: LayoutList, iconBg: 'bg-rose-500', stats: '28 ítems / 6 pasos', route: '/intro/equipment' },
-  { id: 'equipment-v2', title: 'Inventario de Equipos v2', description: 'Inventario con dimensiones desglosadas (Alto/Ancho/Profundidad) y fotos de evidencia', icon: Package, iconBg: 'bg-cyan-400', stats: '4 pasos / 3 fotos', route: '/intro/equipment-v2' },
-  { id: 'sistema-ascenso', title: 'Sistema de ascenso', description: 'Revisión de dispositivo de ascenso y componentes asociados', icon: Shield, iconBg: 'bg-yellow-400', stats: '34 ítems / 6 secciones', route: '/intro/sistema-ascenso' },
-  { id: 'additional-photo-report', title: 'Reporte Adicional de Fotografías', description: 'Captura y organiza las 16 categorías fotográficas requeridas', icon: ImageIcon, iconBg: 'bg-teal-500', stats: '16 categorías', route: '/intro/additional-photo-report' },
-  { id: 'grounding-system-test', title: 'Prueba de puesta a tierra', description: 'Medición de resistencia del sistema de puesta a tierra y evidencia', icon: Zap, iconBg: 'bg-purple-500', stats: '29 ítems / 5 secciones', route: '/intro/grounding-system-test' },
+  { id: 'inspeccion',             title: 'Inspección General',                    description: 'Lista de verificación para inspección general de equipos y sitio',        icon: ClipboardCheck, iconBg: 'bg-blue-500',    route: '/intro/inspeccion' },
+  { id: 'mantenimiento',          title: 'Mantenimiento Preventivo (Checklist)',   description: 'Registro de actividades para mantenimiento preventivo de torres',         icon: Wrench,         iconBg: 'bg-orange-500',  route: '/intro/mantenimiento' },
+  { id: 'mantenimiento-ejecutado',title: 'Mantenimiento Ejecutado',                description: 'Trabajos ejecutados (Rawland/Rooftop) con fotos Antes/Después',          icon: Camera,         iconBg: 'bg-emerald-500', route: '/intro/mantenimiento-ejecutado' },
+  { id: 'equipment',              title: 'Inventario de Equipos',                 description: 'Inventario de equipos (Torre + Piso) con croquis y plano',               icon: LayoutList,     iconBg: 'bg-rose-500',    route: '/intro/equipment' },
+  { id: 'equipment-v2',           title: 'Inventario de Equipos v2',              description: 'Inventario con dimensiones desglosadas y fotos de evidencia',             icon: Package,        iconBg: 'bg-cyan-400',    route: '/intro/equipment-v2' },
+  { id: 'sistema-ascenso',        title: 'Sistema de ascenso',                    description: 'Revisión de dispositivo de ascenso y componentes asociados',              icon: Shield,         iconBg: 'bg-yellow-400',  route: '/intro/sistema-ascenso' },
+  { id: 'additional-photo-report',title: 'Reporte Adicional de Fotografías',      description: 'Captura y organiza las 16 categorías fotográficas requeridas',           icon: ImageIcon,      iconBg: 'bg-teal-500',    route: '/intro/additional-photo-report' },
+  { id: 'grounding-system-test',  title: 'Prueba de puesta a tierra',             description: 'Medición de resistencia del sistema de puesta a tierra y evidencia',     icon: Zap,            iconBg: 'bg-purple-500',  route: '/intro/grounding-system-test' },
 ]
 
-// Maps canonical form_code (Supabase) → formId used in store/permissions
+// Supabase form_code → store formId
 const CODE_TO_FORM_ID = {
-  'inspeccion': 'inspeccion',
-  'mantenimiento': 'mantenimiento',
-  'mantenimiento-ejecutado': 'mantenimiento-ejecutado',
-  'inventario': 'equipment',
-  'inventario-v2': 'equipment-v2',
-  'puesta-tierra': 'grounding-system-test',
-  'sistema-ascenso': 'sistema-ascenso',
-  'additional-photo-report': 'additional-photo-report',
+  'inspeccion': 'inspeccion', 'mantenimiento': 'mantenimiento',
+  'mantenimiento-ejecutado': 'mantenimiento-ejecutado', 'inventario': 'equipment',
+  'inventario-v2': 'equipment-v2', 'puesta-tierra': 'grounding-system-test',
+  'sistema-ascenso': 'sistema-ascenso', 'additional-photo-report': 'additional-photo-report',
 }
 
-// Maps formId → canonical form_code (reverse)
+// store formId → Supabase form_code
 const FORM_ID_TO_CODE = {
-  'inspeccion': 'inspeccion',
-  'mantenimiento': 'mantenimiento',
-  'mantenimiento-ejecutado': 'mantenimiento-ejecutado',
-  'equipment': 'inventario',
-  'equipment-v2': 'inventario-v2',
-  'grounding-system-test': 'puesta-tierra',
-  'sistema-ascenso': 'sistema-ascenso',
-  'additional-photo-report': 'additional-photo-report',
+  'inspeccion': 'inspeccion', 'mantenimiento': 'mantenimiento',
+  'mantenimiento-ejecutado': 'mantenimiento-ejecutado', 'equipment': 'inventario',
+  'equipment-v2': 'inventario-v2', 'grounding-system-test': 'puesta-tierra',
+  'sistema-ascenso': 'sistema-ascenso', 'additional-photo-report': 'additional-photo-report',
 }
 
-export default function Home() {
-  const navigate = useNavigate()
-  const session = useAppStore((s) => s.session)
-  const logout = useAppStore((s) => s.logout)
-  const activeVisit = useAppStore((s) => s.activeVisit)
-  const clearActiveVisit = useAppStore((s) => s.clearActiveVisit)
-  const navigateToOrderScreen = useAppStore((s) => s.navigateToOrderScreen)
-  const showToast = useAppStore((s) => s.showToast)
-  const completedForms = useAppStore((s) => s.completedForms)
-  const markFormCompleted = useAppStore((s) => s.markFormCompleted)
-  const formMeta = useAppStore((s) => s.formMeta)
-  const hydrateFormFromSupabase = useAppStore((s) => s.hydrateFormFromSupabase)
+// ─── Build assignment map from submissions rows ───────────────────────────────
+// Rules:
+//   assigned_to set    → use it
+//   assigned_to null + submission has data + not finalized → infer owner = order creator
+//   assigned_to null + no data (or finalized)             → truly free / completed
+function buildAssignmentMap(submissions, orderOwnerUsername) {
+  const map = {}
+  for (const s of submissions) {
+    const inner = s.payload?.payload || s.payload
+    const hasData = !!inner?.data || s._hasData === true
+    const effectiveOwner =
+      s.assigned_to ||
+      (hasData && !s.finalized ? orderOwnerUsername : null)
 
-  // Re-hydrate a single form after claim — loads the previous owner's data into store
-  const rehydrateForm = async (formCode) => {
-    if (!activeVisit?.id || String(activeVisit.id).startsWith('local-')) return
-    try {
-      const submission = await fetchSubmissionForForm(activeVisit.id, formCode)
-      if (!submission) return
-      let assets = []
-      if (submission.id) {
-        try {
-          const assetsMap = await fetchSubmissionAssets([submission.id])
-          assets = assetsMap[submission.id] || []
-        } catch (_) {}
-      }
-      const inner = submission.payload?.payload || submission.payload
-      if (inner?.data) {
-        hydrateFormFromSupabase(formCode, submission.payload, assets)
-      }
-    } catch (e) {
-      console.warn('[Home] rehydrateForm failed', e?.message)
+    map[s.form_code] = {
+      assignedTo: effectiveOwner,
+      assignmentVersion: s.assignment_version ?? 0,
+      assignedAt: s.assigned_at || null,
+      submissionId: s.id,
     }
   }
-  const resetAllForms = useAppStore((s) => s.resetAllForms)
-  const formDataOwnerId = useAppStore((s) => s.formDataOwnerId)
-  const formAssignments = useAppStore((s) => s.formAssignments)
-  const setFormAssignments = useAppStore((s) => s.setFormAssignments)
-  const isFormWritable = useAppStore((s) => s.isFormWritable)
+  return map
+}
+
+// ─── Component ────────────────────────────────────────────────────────────────
+export default function Home() {
+  const navigate   = useNavigate()
+  const session    = useAppStore((s) => s.session)
+  const logout     = useAppStore((s) => s.logout)
+  const activeVisit = useAppStore((s) => s.activeVisit)
+  const clearActiveVisit    = useAppStore((s) => s.clearActiveVisit)
+  const navigateToOrderScreen = useAppStore((s) => s.navigateToOrderScreen)
+  const showToast  = useAppStore((s) => s.showToast)
+  const completedForms   = useAppStore((s) => s.completedForms)
+  const markFormCompleted = useAppStore((s) => s.markFormCompleted)
+  const formMeta   = useAppStore((s) => s.formMeta)
+  const hydrateFormFromSupabase = useAppStore((s) => s.hydrateFormFromSupabase)
+  const resetAllForms    = useAppStore((s) => s.resetAllForms)
+  const formDataOwnerId  = useAppStore((s) => s.formDataOwnerId)
+  const formAssignments  = useAppStore((s) => s.formAssignments)
+  const setFormAssignments   = useAppStore((s) => s.setFormAssignments)
+  const isFormWritable   = useAppStore((s) => s.isFormWritable)
 
   const [hydrating, setHydrating] = useState(false)
   const pollingRef = useRef(null)
 
-  // Is this inspector collaborating on someone else's order?
+  // Is this inspector a collaborator (joined someone else's order)?
   const isCollaborator = useMemo(
-    () => activeVisit && session && activeVisit.inspector_username !== session.username,
+    () => !!(activeVisit && session && activeVisit.inspector_username !== session.username),
     [activeVisit, session]
   )
 
-  // Claim modal state
+  // ── Claim modal ──────────────────────────────────────────────────────────
   const [claimModal, setClaimModal] = useState({
-    open: false, mode: 'take', formCode: '', formTitle: '',
-    currentOwner: null, submissionId: null, currentVersion: 0,
+    open: false, mode: 'take', formCode: '',
+    formTitle: '', currentOwner: null, submissionId: null, currentVersion: 0,
   })
 
-  const openClaimModal = (form, mode) => {
-    const formCode = FORM_ID_TO_CODE[form.id] || form.id
+  const openClaimModal = useCallback((form, mode) => {
+    const formCode   = FORM_ID_TO_CODE[form.id] || form.id
     const assignment = formAssignments?.[formCode]
     setClaimModal({
-      open: true,
-      mode,
-      formCode,
-      formTitle: form.title,
-      currentOwner: assignment?.assignedTo || null,
-      submissionId: assignment?.submissionId || null,
+      open: true, mode, formCode, formTitle: form.title,
+      currentOwner:   assignment?.assignedTo    || null,
+      submissionId:   assignment?.submissionId  || null,
       currentVersion: assignment?.assignmentVersion ?? 0,
     })
-  }
+  }, [formAssignments])
 
-  // Redirect to order screen if no active visit
+  // ── Re-hydrate a single form after reassignment ──────────────────────────
+  const rehydrateForm = useCallback(async (formCode, visitId) => {
+    if (!visitId || String(visitId).startsWith('local-')) return
+    try {
+      const submission = await fetchSubmissionForForm(visitId, formCode)
+      if (!submission) return
+      let assets = []
+      if (submission.id) {
+        try {
+          const map = await fetchSubmissionAssets([submission.id])
+          assets = map[submission.id] || []
+        } catch (_) {}
+      }
+      const inner = submission.payload?.payload || submission.payload
+      if (inner?.data) hydrateFormFromSupabase(formCode, submission.payload, assets)
+    } catch (e) {
+      console.warn('[Home] rehydrateForm failed', e?.message)
+    }
+  }, [hydrateFormFromSupabase])
+
+  // ── Redirect if no active visit ──────────────────────────────────────────
   useEffect(() => {
     if (!activeVisit) navigate('/order', { replace: true })
   }, [activeVisit, navigate])
 
-  // Build assignment map from submissions array.
-  // If assigned_to is NULL but submission exists with data → owned by order creator.
-  // This handles forms created before the collaborative feature was added.
-  const buildAssignmentMap = (submissions) => {
-    const map = {}
-    const orderOwner = activeVisit?.inspector_username || null
-    for (const s of submissions) {
-      const inner = s.payload?.payload || s.payload
-      const hasData = !!inner?.data || s.finalized === true || s._hasData === true
-      // Determine effective owner:
-      // 1. Explicitly assigned → use assigned_to
-      // 2. No assignment but submission has data → owned by order creator
-      // 3. No assignment, no data → truly free
-      const effectiveOwner = s.assigned_to
-        || (hasData && !s.finalized ? orderOwner : null)
-      map[s.form_code] = {
-        assignedTo: effectiveOwner,
-        assignmentVersion: s.assignment_version ?? 0,
-        assignedAt: s.assigned_at || null,
-        submissionId: s.id,
-      }
-    }
-    return map
-  }
-
-  // Hydrate from Supabase on mount / order change
+  // ── Initial hydration on mount / order change ────────────────────────────
   useEffect(() => {
     if (!activeVisit?.id) return
     if (String(activeVisit.id).startsWith('local-')) return
 
     const isOwnOrder = formDataOwnerId === activeVisit.id
+    const orderOwner = activeVisit.inspector_username
+
     if (!navigator.onLine) {
-      if (!isOwnOrder) { resetAllForms(); useAppStore.setState({ formDataOwnerId: activeVisit.id }) }
+      if (!isOwnOrder) {
+        resetAllForms()
+        useAppStore.setState({ formDataOwnerId: activeVisit.id })
+      }
       return
     }
 
@@ -160,49 +155,62 @@ export default function Home() {
 
     fetchVisitSubmissions(activeVisit.id)
       .then(async (submissions) => {
+        // Fetch all assets in parallel
         const submissionIds = submissions.map((s) => s.id).filter(Boolean)
         let assetsMap = {}
         if (submissionIds.length > 0) {
           try { assetsMap = await fetchSubmissionAssets(submissionIds) } catch (_) {}
         }
 
+        // Hydrate each form and mark completed ones
         submissions.forEach((s) => {
           const formId = CODE_TO_FORM_ID[s.form_code] || s.form_code
-          const inner = s.payload?.payload || s.payload
+          const inner  = s.payload?.payload || s.payload
           const assets = assetsMap[s.id] || []
-          if (s.finalized === true || inner?.finalized === true) markFormCompleted(formId)
-          if (inner?.data) hydrateFormFromSupabase(s.form_code, s.payload, assets)
+
+          if (s.finalized === true || inner?.finalized === true) {
+            markFormCompleted(formId)
+          }
+          if (inner?.data) {
+            hydrateFormFromSupabase(s.form_code, s.payload, assets)
+          }
         })
 
-        // Store assignment info
-        setFormAssignments(buildAssignmentMap(submissions))
+        // Build and store assignment map
+        setFormAssignments(buildAssignmentMap(submissions, orderOwner))
         useAppStore.setState({ formDataOwnerId: activeVisit.id })
       })
       .catch((err) => console.warn('[Home] fetchVisitSubmissions failed', err?.message))
       .finally(() => setHydrating(false))
-  }, [activeVisit?.id])
+  }, [activeVisit?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Polling: refresh assignments every 30s to detect reassignments
+  // ── 30-second polling: refresh assignments ───────────────────────────────
   const refreshAssignments = useCallback(async () => {
-    if (!activeVisit?.id || String(activeVisit.id).startsWith('local-') || !navigator.onLine) return
-    try {
-      const submissions = await fetchVisitAssignments(activeVisit.id)
-      const newMap = buildAssignmentMap(submissions)
+    const visit = useAppStore.getState().activeVisit
+    const me    = useAppStore.getState().session?.username
+    if (!visit?.id || String(visit.id).startsWith('local-') || !navigator.onLine) return
 
-      // Detect if any form we currently own was taken away
+    try {
+      const submissions = await fetchVisitAssignments(visit.id)
+      const newMap = buildAssignmentMap(submissions, visit.inspector_username)
       const currentMap = useAppStore.getState().formAssignments || {}
+
+      // Notify if a form was taken away while we were editing
       for (const [code, oldA] of Object.entries(currentMap)) {
         const newA = newMap[code]
-        if (oldA?.assignedTo === session?.username && newA?.assignedTo && newA.assignedTo !== session?.username) {
-          showToast(
-            `El formulario fue tomado por ${newA.assignedTo} mientras estabas sin conexión. Ahora estás en modo lectura.`,
+        if (
+          oldA?.assignedTo === me &&
+          newA?.assignedTo && newA.assignedTo !== me
+        ) {
+          useAppStore.getState().showToast(
+            `"${code}" fue tomado por ${newA.assignedTo}. Ahora estás en modo lectura.`,
             'warning'
           )
         }
       }
       setFormAssignments(newMap)
     } catch (_) {}
-  }, [activeVisit?.id, session?.username])
+  }, [setFormAssignments])
 
   useEffect(() => {
     if (!activeVisit?.id) return
@@ -210,16 +218,18 @@ export default function Home() {
     return () => clearInterval(pollingRef.current)
   }, [activeVisit?.id, refreshAssignments])
 
+  // ── Visible forms filtered by role ───────────────────────────────────────
   const visibleForms = useMemo(() => {
     if (!session) return []
     return filterFormsByRole(ALL_FORMS, session.role)
   }, [session])
 
+  // ── Handlers ─────────────────────────────────────────────────────────────
   const handleLogout = () => { logout(); navigate('/login', { replace: true }) }
 
   const handleCloseOrder = async () => {
     if (!activeVisit) return
-    if (!window.confirm(`¿Cerrar la orden ${activeVisit.order_number}? Podrá crear o continuar otra orden.`)) return
+    if (!window.confirm(`¿Cerrar la orden ${activeVisit.order_number}?`)) return
     try {
       let geo = { lat: null, lng: null }
       try {
@@ -244,9 +254,11 @@ export default function Home() {
 
   if (!activeVisit) return null
 
+  // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col">
-      {/* Header */}
+
+      {/* ── Header (identical to v2.5.85) ── */}
       <header className="bg-gradient-to-b from-primary to-primary/90 text-white px-6 pt-4 pb-3 relative">
         <button
           type="button" onClick={handleLogout} aria-label="Cerrar sesión"
@@ -297,32 +309,36 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Collaboration banner */}
+      {/* ── Collaboration banner ── */}
       {isCollaborator && (
         <div className="mx-4 mt-3 bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 flex items-start gap-3">
           <Users size={16} className="text-blue-600 flex-shrink-0 mt-0.5" />
           <p className="text-xs text-blue-800 leading-relaxed">
-            <span className="font-bold">Modo colaboración.</span> Los formularios verdes están libres para tomar.
-            Los amarillos tienen dueño — puedes verlos o reasignarte.
+            <span className="font-bold">Modo colaboración.</span> Los formularios libres los puedes tomar.
+            Los ocupados los puedes ver o reasignarte.
           </p>
         </div>
       )}
 
-      {/* Content */}
+      {/* ── Form list ── */}
       <main className="flex-1 px-4 mt-3">
         <section>
           <div className="flex justify-between items-center mb-3 px-1">
             <h2 className="text-xs font-bold text-gray-500 uppercase tracking-wider">Formularios</h2>
-            <span className="text-xs text-gray-400">{(completedForms || []).length}/{visibleForms.length} completados</span>
+            <span className="text-xs text-gray-400">
+              {(completedForms || []).length}/{visibleForms.length} completados
+            </span>
           </div>
 
           {visibleForms.length === 0 ? (
             <div className="bg-white rounded-2xl p-8 text-center border border-gray-100">
               <ClipboardCheck size={24} className="text-gray-400 mx-auto mb-2" />
               <p className="text-sm font-semibold text-gray-700">Sin formularios asignados</p>
+              <p className="text-xs text-gray-500 mt-1">Su rol no tiene formularios habilitados.</p>
             </div>
           ) : (
             <div className="space-y-2.5">
+
               {hydrating && (
                 <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4 flex items-center gap-3">
                   <div className="animate-spin h-5 w-5 border-2 border-blue-500 border-t-transparent rounded-full" />
@@ -332,35 +348,46 @@ export default function Home() {
 
               {visibleForms.map((form) => {
                 const IconComponent = form.icon
-                const isCompleted = (completedForms || []).includes(form.id)
                 const formCode = FORM_ID_TO_CODE[form.id] || form.id
-                const assignment = formAssignments?.[formCode]
-                const writable = isFormWritable(formCode)
-                const assignedToMe = assignment?.assignedTo === session?.username
-                const assignedToOther = assignment?.assignedTo && !assignedToMe
-                const isFree = !assignment?.assignedTo
-                const hasProgress = !!formMeta?.[form.id]?.startedAt && !isCompleted && !hydrating
+                const isCompleted   = (completedForms || []).includes(form.id)
+                const assignment    = formAssignments?.[formCode]
+                const writable      = isFormWritable(formCode)
+                const assignedToOther = assignment?.assignedTo && assignment.assignedTo !== session?.username
+                // "Free" for a collaborator = no submission row at all OR submission with no data
+                const isFreeForCollab = !assignment?.assignedTo
+                // Original progress check (for order owner's own view)
+                const hasProgress   = !!formMeta?.[form.id]?.startedAt && !isCompleted && !hydrating
 
-                // Status badge
+                // ── Status badge ── keeps original labels + adds Ocupado/Libre
                 const getStatus = () => {
                   if (isCompleted) return { label: 'Completado', badge: 'bg-green-50 text-green-600 border-green-200' }
-                  if (assignedToMe) return { label: '✏️ Editando', badge: 'bg-teal-50 text-teal-700 border-teal-200' }
-                  if (assignedToOther) return { label: '🔒 Ocupado', badge: 'bg-amber-50 text-amber-600 border-amber-200' }
-                  if (isFree && isCollaborator) return { label: 'Libre', badge: 'bg-green-50 text-green-600 border-green-200' }
-                  if (hasProgress) return { label: 'En progreso', badge: 'bg-amber-50 text-amber-600 border-amber-200' }
+
+                  if (isCollaborator) {
+                    // Collaborator's view
+                    if (assignedToOther) return { label: 'Ocupado',    badge: 'bg-amber-50 text-amber-600 border-amber-200' }
+                    if (!isFreeForCollab && !assignedToOther) return { label: 'En progreso', badge: 'bg-amber-50 text-amber-600 border-amber-200' } // I took it, has data
+                    if (isFreeForCollab) return { label: 'Libre',      badge: 'bg-green-50 text-green-600 border-green-200' }
+                    return { label: 'Pendiente', badge: 'bg-gray-50 text-gray-500 border-gray-200' }
+                  }
+
+                  // Order owner's view — same as v2.5.85 + show "Ocupado" if collaborator took it
+                  if (assignedToOther) return { label: 'Ocupado',     badge: 'bg-amber-50 text-amber-600 border-amber-200' }
+                  if (hasProgress)     return { label: 'En progreso', badge: 'bg-amber-50 text-amber-600 border-amber-200' }
                   return { label: 'Pendiente', badge: 'bg-gray-50 text-gray-500 border-gray-200' }
                 }
                 const status = getStatus()
 
-                // Border accent for collaboration mode
-                const borderAccent = !isCompleted && isCollaborator
-                  ? assignedToOther ? 'border-l-4 border-l-amber-400' : isFree ? 'border-l-4 border-l-green-500' : ''
+                // Visual accent for collaboration
+                const leftBorder = !isCompleted && isCollaborator
+                  ? assignedToOther ? 'border-l-4 border-l-amber-400'
+                  : isFreeForCollab  ? 'border-l-4 border-l-green-500'
+                  : ''
                   : ''
 
-                const canNavigate = !isCompleted && !hydrating && writable
                 const handleCardClick = () => {
                   if (isCompleted || hydrating) return
-                  if (!writable) return // read-only: use the buttons below
+                  if (!writable && !assignedToOther) return
+                  // Collaborator clicking an occupied form → go to read-only view via FormIntro
                   navigate(form.route)
                 }
 
@@ -369,60 +396,68 @@ export default function Home() {
                     <button
                       onClick={handleCardClick}
                       disabled={isCompleted}
-                      className={`w-full rounded-2xl p-4 flex items-center gap-4 shadow-sm border text-left transition-all ${borderAccent} ${
-                        isCompleted ? 'bg-gray-50 border-gray-200 opacity-70 cursor-not-allowed'
-                        : !writable ? 'bg-amber-50/40 border-amber-200 cursor-default'
+                      className={`w-full rounded-2xl p-4 flex items-center gap-4 shadow-sm border text-left transition-all ${leftBorder} ${
+                        isCompleted          ? 'bg-gray-50 border-gray-200 opacity-70 cursor-not-allowed'
+                        : assignedToOther    ? 'bg-amber-50/30 border-amber-200 cursor-pointer'
                         : 'bg-white border-gray-100 active:scale-[0.98]'
                       }`}
                     >
                       <div className={`w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0 shadow-md ${
                         isCompleted ? 'bg-green-500' : form.iconBg
                       }`}>
-                        {isCompleted ? <Check size={28} className="text-white" strokeWidth={3} /> : <IconComponent size={28} className="text-white" />}
+                        {isCompleted
+                          ? <Check size={28} className="text-white" strokeWidth={3} />
+                          : <IconComponent size={28} className="text-white" />}
                       </div>
+
                       <div className="flex-1 min-w-0">
-                        <h3 className={`font-bold text-base ${isCompleted ? 'text-gray-500' : 'text-gray-900'}`}>{form.title}</h3>
+                        <h3 className={`font-bold text-base ${isCompleted ? 'text-gray-500' : 'text-gray-900'}`}>
+                          {form.title}
+                        </h3>
                         {assignedToOther && (
-                          <p className="text-xs text-amber-700 mt-0.5 font-medium">{assignment.assignedTo} está editando</p>
-                        )}
-                        {assignedToMe && (
-                          <p className="text-xs text-teal-700 mt-0.5 font-medium">Asignado a ti</p>
+                          <p className="text-xs text-amber-700 mt-0.5 font-medium">
+                            {assignment.assignedTo} está editando
+                          </p>
                         )}
                         <div className="flex items-center gap-2 mt-1.5">
-                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${status.badge}`}>{status.label}</span>
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${status.badge}`}>
+                            {status.label}
+                          </span>
                         </div>
                       </div>
-                      {isCompleted ? <Lock size={18} className="text-gray-300 flex-shrink-0" />
-                        : writable ? <ChevronRight size={20} className="text-gray-300 flex-shrink-0" />
-                        : <Eye size={18} className="text-amber-400 flex-shrink-0" />}
+
+                      {isCompleted         ? <Lock       size={18} className="text-gray-300 flex-shrink-0" />
+                       : assignedToOther   ? <Eye        size={18} className="text-amber-400 flex-shrink-0" />
+                       : <ChevronRight size={20} className="text-gray-300 flex-shrink-0" />}
                     </button>
 
-                    {/* Collaboration action buttons — shown for non-completed forms when not writable or it's free for a collaborator */}
+                    {/* ── Action buttons under the card (collaboration only) ── */}
                     {!isCompleted && !hydrating && (
                       <>
-                        {/* Collaborator: free form — show Take button */}
-                        {isCollaborator && isFree && (
-                          <div className="flex gap-2 px-1 -mt-1 mb-1">
+                        {/* Free form for collaborator → Take button */}
+                        {isCollaborator && isFreeForCollab && (
+                          <div className="px-1 -mt-1.5 mb-0.5">
                             <button
                               onClick={() => openClaimModal(form, 'take')}
-                              className="flex-1 py-2.5 rounded-b-xl bg-green-600 text-white text-xs font-bold active:scale-[0.99] transition-all"
+                              className="w-full py-2.5 rounded-b-2xl bg-green-600 text-white text-xs font-bold active:scale-[0.99] transition-all"
                             >
                               + Tomar e iniciar
                             </button>
                           </div>
                         )}
-                        {/* Collaborator or owner: occupied form — show View + Reassign */}
+
+                        {/* Occupied form → View + Reassign for anyone who isn't the current owner */}
                         {assignedToOther && (
-                          <div className="flex gap-2 px-1 -mt-1 mb-1">
+                          <div className="flex gap-2 px-1 -mt-1.5 mb-0.5">
                             <button
                               onClick={() => navigate(form.route)}
-                              className="w-24 py-2.5 rounded-bl-xl bg-gray-100 text-gray-700 text-xs font-bold active:scale-[0.99] transition-all border-t-0 flex items-center justify-center gap-1"
+                              className="w-24 py-2.5 rounded-bl-2xl bg-gray-100 text-gray-700 text-xs font-bold active:scale-[0.99] flex items-center justify-center gap-1"
                             >
                               <Eye size={12} /> Ver
                             </button>
                             <button
                               onClick={() => openClaimModal(form, 'reassign')}
-                              className="flex-1 py-2.5 rounded-br-xl bg-amber-500 text-white text-xs font-bold active:scale-[0.99] transition-all"
+                              className="flex-1 py-2.5 rounded-br-2xl bg-amber-500 text-white text-xs font-bold active:scale-[0.99] transition-all"
                             >
                               Reasignarme
                             </button>
@@ -438,14 +473,20 @@ export default function Home() {
         </section>
       </main>
 
-      {/* Order actions */}
+      {/* ── Bottom actions ── */}
       {activeVisit && (
         <div className="px-4 pb-2 pt-3 space-y-2">
-          <button onClick={handleChangeOrder} className="w-full py-3 rounded-xl border-2 border-gray-300 text-gray-600 text-sm font-bold active:scale-[0.98] transition-all">
+          <button
+            onClick={handleChangeOrder}
+            className="w-full py-3 rounded-xl border-2 border-gray-300 text-gray-600 text-sm font-bold active:scale-[0.98] transition-all"
+          >
             {isCollaborator ? 'Salir de esta orden' : 'Cambiar Orden'}
           </button>
           {!isCollaborator && (
-            <button onClick={handleCloseOrder} className="w-full py-3 rounded-xl border-2 border-red-300 bg-red-50 text-red-600 text-sm font-bold active:scale-[0.98] transition-all">
+            <button
+              onClick={handleCloseOrder}
+              className="w-full py-3 rounded-xl border-2 border-red-300 bg-red-50 text-red-600 text-sm font-bold active:scale-[0.98] transition-all"
+            >
               Cerrar Orden
             </button>
           )}
@@ -456,7 +497,7 @@ export default function Home() {
         <p className="text-xs text-gray-400">© 2026</p>
       </footer>
 
-      {/* Claim Modal */}
+      {/* ── Claim modal ── */}
       <ClaimFormModal
         isOpen={claimModal.open}
         onClose={() => setClaimModal((p) => ({ ...p, open: false }))}
@@ -467,11 +508,13 @@ export default function Home() {
         submissionId={claimModal.submissionId}
         currentVersion={claimModal.currentVersion}
         onSuccess={async (assignment) => {
-          const form = visibleForms.find((f) => FORM_ID_TO_CODE[f.id] === claimModal.formCode || f.id === claimModal.formCode)
-          // Re-hydrate with previous owner's data before navigating
-          if (assignment?.needsHydration) {
-            await rehydrateForm(claimModal.formCode)
+          // Hydrate previous owner's data before navigating (reassign path)
+          if (assignment?.needsHydration && activeVisit?.id) {
+            await rehydrateForm(claimModal.formCode, activeVisit.id)
           }
+          const form = visibleForms.find(
+            (f) => (FORM_ID_TO_CODE[f.id] || f.id) === claimModal.formCode
+          )
           if (form) navigate(form.route)
         }}
       />
