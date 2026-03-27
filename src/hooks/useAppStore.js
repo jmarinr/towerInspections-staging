@@ -56,9 +56,6 @@ export function isDisplayablePhoto(val) {
  * @param {string} assetType - e.g. 'inspection:item1:before'
  * @returns {string|null} data URL, public URL, or null
  */
-// v2.5.86 — expose store globally for supabaseSync access
-if (typeof window !== 'undefined') window.__ptiStore = useAppStore
-
 export function recoverPhotoFromQueue(formCode, assetType) {
   try {
     // First check pending queue (has full data URL)
