@@ -119,12 +119,23 @@ export default function Home() {
     if (!activeVisit) navigate('/order', { replace: true })
   }, [activeVisit, navigate])
 
-  // Build assignment map from submissions array
+  // Build assignment map from submissions array.
+  // If assigned_to is NULL but submission exists with data → owned by order creator.
+  // This handles forms created before the collaborative feature was added.
   const buildAssignmentMap = (submissions) => {
     const map = {}
+    const orderOwner = activeVisit?.inspector_username || null
     for (const s of submissions) {
+      const inner = s.payload?.payload || s.payload
+      const hasData = !!inner?.data || s.finalized === true || s._hasData === true
+      // Determine effective owner:
+      // 1. Explicitly assigned → use assigned_to
+      // 2. No assignment but submission has data → owned by order creator
+      // 3. No assignment, no data → truly free
+      const effectiveOwner = s.assigned_to
+        || (hasData && !s.finalized ? orderOwner : null)
       map[s.form_code] = {
-        assignedTo: s.assigned_to || null,
+        assignedTo: effectiveOwner,
         assignmentVersion: s.assignment_version ?? 0,
         assignedAt: s.assigned_at || null,
         submissionId: s.id,

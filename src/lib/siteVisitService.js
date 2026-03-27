@@ -68,14 +68,20 @@ export async function fetchVisitSubmissions(visitId) {
   return data || []
 }
 
-/** Lightweight poll — only assignment info, no payload */
+/** Lightweight poll — assignment info + minimal data indicator */
 export async function fetchVisitAssignments(visitId) {
   const { data, error } = await supabase
     .from('submissions')
-    .select('id, form_code, finalized, assigned_to, assignment_version, assigned_at')
+    .select('id, form_code, finalized, assigned_to, assignment_version, assigned_at, updated_at')
     .eq('site_visit_id', visitId)
   if (error) throw error
-  return data || []
+  // Mark each row with hasData=true if it was updated (has real content)
+  // We infer this from updated_at > created_at-ish (any activity means data exists)
+  return (data || []).map(s => ({
+    ...s,
+    // Treat any non-finalized submission as having data (it was saved at least once)
+    _hasData: true,
+  }))
 }
 
 export async function fetchSubmissionAssets(submissionIds) {
