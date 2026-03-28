@@ -45,7 +45,7 @@ function safeJsonParse(str, fallback) {
 
 function getAppVersion() {
   // Vite injects this at build time if you define it; fallback to package.json string shown in UI.
-  return import.meta.env.VITE_APP_VERSION || '2.5.86';
+  return import.meta.env.VITE_APP_VERSION || '2.5.87';
 }
 
 function loadMap(key) {
@@ -190,7 +190,7 @@ export async function ensureSubmissionId(formCode, formVersion = '1.2.1') {
 
   const { data, error } = await supabase
     .from('submissions')
-    .upsert(row, { onConflict: 'site_visit_id,form_code' })
+    .upsert(row, { onConflict: 'org_code,device_id,form_code,site_visit_id' })
     .select('id')
     .single();
 
@@ -330,7 +330,7 @@ export async function flushSupabaseQueues({ formCode } = {}) {
         // Each order+form+device gets its own row
         const { error } = await supabase
           .from('submissions')
-          .upsert(row, { onConflict: 'site_visit_id,form_code' });
+          .upsert(row, { onConflict: 'org_code,device_id,form_code,site_visit_id' });
 
         if (error) throw error;
 
