@@ -227,7 +227,7 @@ export default function SafetyClimbingDevice() {
       <main className="flex-1 px-4 pb-44 pt-4 overflow-x-hidden overflow-y-auto">
         {/* Meta + Reset row */}
         <div className="flex items-center justify-between gap-2 mb-2">
-          <FormMetaBar meta={formMeta?.['sistema-ascenso']} />
+          <FormMetaBar meta={formMeta?.['sistema-ascenso']} formCode="sistema-ascenso" formRoute="/intro/sistema-ascenso" />
           <button
             className="px-3 py-2 rounded-xl border border-red-200 text-red-600 font-bold text-sm active:scale-95"
             onClick={() => {

@@ -433,7 +433,7 @@ export default function AdditionalPhotoReport() {
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col pb-24">
       <AppHeader title="Reporte de Fotos" subtitle={`${currentCategory.emoji} ${currentCategory.title}`} />
-      <FormMetaBar formId={FORM_ID} formCode={FORM_CODE} />
+      <FormMetaBar formCode="additional-photo-report" formRoute="/intro/additional-photo-report" />
       <AutosaveIndicator />
 
       {/* Progress */}

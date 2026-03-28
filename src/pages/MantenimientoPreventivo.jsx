@@ -285,7 +285,7 @@ export default function MantenimientoPreventivo() {
 
       <main className="flex-1 px-4 pb-44 pt-4 overflow-x-hidden overflow-y-auto">
         <div className="flex items-center justify-between gap-2">
-          <FormMetaBar meta={formMeta?.mantenimiento} />
+          <FormMetaBar meta={formMeta?.mantenimiento} formCode="mantenimiento" formRoute="/intro/mantenimiento" />
           <button
             className="px-3 py-2 rounded-xl border border-red-200 text-red-600 font-bold text-sm active:scale-95"
             onClick={async () => {
