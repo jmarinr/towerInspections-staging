@@ -61,3 +61,30 @@ body {
 main, section, article, div {
   max-width: 100%;
 }
+
+
+/* ── Read-only form mode (v2.6.3) ─────────────────────────────────────────
+   When FormMetaBar sets data-readonly="true" on <main>, all interactive
+   elements are visually dimmed and pointer-events disabled.
+   The banner and navigation buttons are excluded via :not() selectors.
+*/
+main[data-readonly="true"] {
+  position: relative;
+}
+
+main[data-readonly="true"] input,
+main[data-readonly="true"] textarea,
+main[data-readonly="true"] select,
+main[data-readonly="true"] button:not(.readonly-allowed),
+main[data-readonly="true"] label[for] {
+  pointer-events: none;
+  opacity: 0.65;
+}
+
+/* Keep navigation buttons (Anterior/Siguiente) and the banner interactive */
+main[data-readonly="true"] .readonly-allowed,
+main[data-readonly="true"] nav,
+main[data-readonly="true"] [data-readonly-allowed] {
+  pointer-events: auto !important;
+  opacity: 1 !important;
+}

@@ -34,7 +34,7 @@ export default function BottomNav({
   const buttonBase = 'flex-1 flex items-center justify-center gap-1 sm:gap-2 py-3 px-3 rounded-xl font-bold text-sm sm:text-[15px] transition-all'
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50">
+    <nav data-readonly-allowed className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50">
       <div className="flex gap-2 sm:gap-3 p-3 sm:p-4">
         {showPrev && (
           <button
