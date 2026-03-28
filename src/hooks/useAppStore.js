@@ -7,7 +7,7 @@ const getDefaultDate = () => new Date().toISOString().split('T')[0]
 const getDefaultTime = () => new Date().toTimeString().slice(0, 5)
 
 // Versión mostrada en UI y enviada como metadata a Supabase
-const APP_VERSION_DISPLAY = '2.5.94'
+const APP_VERSION_DISPLAY = '2.5.95'
 const FORM_CODE_ADDITIONAL = 'additional-photo-report'
 
 const isDataUrlString = (value) =>
@@ -548,10 +548,20 @@ export const useAppStore = create(
               // equipment:fotoTorre → fotoTorreDataUrl
               keyToUrl[`${parts[1]}DataUrl`] = url
               keyToUrl[`${parts[1]}`] = url
-              // Context-aware: for nested pngDataUrl under parent key
-              // e.g. equipment:croquisEsquematico → croquisEsquematico.pngDataUrl
               keyToUrl[`${parts[1]}:pngDataUrl`] = url
               keyToUrl[`${parts[1]}-pngDataUrl`] = url
+            }
+            if (parts.length === 2 && parts[0] === 'equipmentV2') {
+              // equipmentV2:fotoGPS → fotoGPS (direct field name in torre/piso sections)
+              keyToUrl[parts[1]] = url
+              keyToUrl[`${parts[1]}DataUrl`] = url
+            }
+            if (parts.length === 3 && parts[0] === 'carrier') {
+              // carrier:0:fotoAntena → used in equipment-v2 carrier sections
+              // Store as "carrierIdx-field" for context-aware lookup
+              keyToUrl[`${parts[0]}-${parts[1]}-${parts[2]}`] = url
+              keyToUrl[`${parts[1]}-${parts[2]}`] = url
+              keyToUrl[parts[2]] = url  // direct field fallback
             }
           }
 

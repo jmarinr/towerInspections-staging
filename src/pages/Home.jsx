@@ -109,7 +109,19 @@ export default function Home() {
     })
   }, [formAssignments])
 
-  // ── Re-hydrate a single form after reassignment ──────────────────────────
+  // Reset map: supabase form_code → store reset action (verified against store)
+  const RESET_MAP = {
+    'inspeccion': 'resetInspectionData',
+    'mantenimiento': 'resetMaintenanceData',
+    'mantenimiento-ejecutado': 'resetPMExecutedData',
+    'inventario': 'resetEquipmentInventoryData',
+    'inventario-v2': 'resetEquipmentInventoryV2Data',
+    'puesta-tierra': 'resetGroundingSystemData',
+    'sistema-ascenso': 'resetSafetyClimbingData',
+    'additional-photo-report': 'resetAdditionalPhotoData',
+  }
+
+  // ── Re-hydrate a single form — always resets store first to avoid contamination
   const rehydrateForm = useCallback(async (formCode, visitId) => {
     if (!visitId || String(visitId).startsWith('local-')) return
     try {
@@ -123,7 +135,15 @@ export default function Home() {
         } catch (_) {}
       }
       const inner = submission.payload?.payload || submission.payload
-      if (inner?.data) hydrateFormFromSupabase(formCode, submission.payload, assets)
+      if (inner?.data) {
+        // Reset store for this form before hydrating — prevents own data contamination
+        const resetAction = RESET_MAP[formCode]
+        if (resetAction) {
+          const fn = useAppStore.getState()[resetAction]
+          if (fn) fn()
+        }
+        hydrateFormFromSupabase(formCode, submission.payload, assets)
+      }
     } catch (e) {
       console.warn('[Home] rehydrateForm failed', e?.message)
     }
@@ -292,7 +312,7 @@ export default function Home() {
               </span>
             )}
           </div>
-          <p className="text-white/70 text-sm mt-0.5">Sistema de Inspección v2.5.94</p>
+          <p className="text-white/70 text-sm mt-0.5">Sistema de Inspección v2.5.95</p>
           {session && (
             <div className="mt-2 flex items-center gap-1.5 bg-white/15 rounded-full px-3 py-1">
               <User size={12} />
