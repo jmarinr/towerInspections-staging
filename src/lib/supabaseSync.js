@@ -45,7 +45,7 @@ function safeJsonParse(str, fallback) {
 
 function getAppVersion() {
   // Vite injects this at build time if you define it; fallback to package.json string shown in UI.
-  return import.meta.env.VITE_APP_VERSION || '2.5.90';
+  return import.meta.env.VITE_APP_VERSION || '2.5.92';
 }
 
 function loadMap(key) {

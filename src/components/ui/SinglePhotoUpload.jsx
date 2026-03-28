@@ -27,12 +27,13 @@ export default function SinglePhotoUpload({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rawValue, formCode, assetType, uploadStatus])
 
-  const displayablePhoto = recoveredPhoto || (isDisplayablePhoto(rawValue) ? rawValue : null)
+  const displayablePhoto = confirmedUrl || recoveredPhoto || (isDisplayablePhoto(rawValue) ? rawValue : null)
   const hasUploadedPhoto = !!rawValue && !displayablePhoto
 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [uploadStatus, setUploadStatus] = useState(null)
+  const [confirmedUrl, setConfirmedUrl] = useState(null)
   const statusTimerRef = useRef(null)
 
   // Subscribe to upload events — update store value to public URL on DONE
@@ -41,8 +42,8 @@ export default function SinglePhotoUpload({
     const unsub = onPhotoStatus((evt) => {
       if (evt.formCode === formCode && evt.assetType === assetType) {
         setUploadStatus(evt.status)
-        if (evt.status === PhotoUploadStatus.DONE && evt.publicUrl && onChange) {
-          onChange(evt.publicUrl)
+        if (evt.status === PhotoUploadStatus.DONE && evt.publicUrl) {
+          setConfirmedUrl(evt.publicUrl)
         }
         if (evt.status === PhotoUploadStatus.DONE || evt.status === PhotoUploadStatus.ERROR) {
           clearTimeout(statusTimerRef.current)

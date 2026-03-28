@@ -14,6 +14,7 @@ export default function PhotoUpload({ type, photo, value, onCapture, onRemove, f
   const [error, setError] = useState(null)
   // Upload status: null | 'uploading' | 'done' | 'error'
   const [uploadStatus, setUploadStatus] = useState(null)
+  const [confirmedUrl, setConfirmedUrl] = useState(null)
   const statusTimerRef = useRef(null)
 
   // Try to recover photo from pending queue or uploaded URLs
@@ -27,7 +28,7 @@ export default function PhotoUpload({ type, photo, value, onCapture, onRemove, f
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rawPhoto, formCode, assetType, uploadStatus])
 
-  const displayablePhoto = recoveredPhoto || (isDisplayablePhoto(rawPhoto) ? rawPhoto : null)
+  const displayablePhoto = confirmedUrl || recoveredPhoto || (isDisplayablePhoto(rawPhoto) ? rawPhoto : null)
   const hasUploadedPhoto = !!rawPhoto && !displayablePhoto
 
   // Subscribe to upload events for this specific photo
@@ -36,9 +37,9 @@ export default function PhotoUpload({ type, photo, value, onCapture, onRemove, f
     const unsub = onPhotoStatus((evt) => {
       if (evt.formCode === formCode && evt.assetType === assetType) {
         setUploadStatus(evt.status)
-        // On DONE: update the store value to the public URL so photo shows immediately
-        if (evt.status === PhotoUploadStatus.DONE && evt.publicUrl && onCapture) {
-          onCapture(evt.publicUrl)
+        // On DONE: store confirmed URL in local state so photo shows immediately
+        if (evt.status === PhotoUploadStatus.DONE && evt.publicUrl) {
+          setConfirmedUrl(evt.publicUrl)
         }
         // Auto-clear 'done' after 3 seconds
         if (evt.status === PhotoUploadStatus.DONE) {

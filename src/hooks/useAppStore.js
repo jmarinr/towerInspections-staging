@@ -7,7 +7,7 @@ const getDefaultDate = () => new Date().toISOString().split('T')[0]
 const getDefaultTime = () => new Date().toTimeString().slice(0, 5)
 
 // Versión mostrada en UI y enviada como metadata a Supabase
-const APP_VERSION_DISPLAY = '2.5.90'
+const APP_VERSION_DISPLAY = '2.5.92'
 const FORM_CODE_ADDITIONAL = 'additional-photo-report'
 
 const isDataUrlString = (value) =>
@@ -547,24 +547,32 @@ export const useAppStore = create(
             if (parts.length === 2 && parts[0] === 'equipment') {
               // equipment:fotoTorre → fotoTorreDataUrl
               keyToUrl[`${parts[1]}DataUrl`] = url
-              // Also match pngDataUrl for nested objects
               keyToUrl[`${parts[1]}`] = url
+              // Context-aware: for nested pngDataUrl under parent key
+              // e.g. equipment:croquisEsquematico → croquisEsquematico.pngDataUrl
+              keyToUrl[`${parts[1]}:pngDataUrl`] = url
+              keyToUrl[`${parts[1]}-pngDataUrl`] = url
             }
           }
 
           // Recursively walk data and replace placeholders
-          const injectUrls = (obj) => {
+          const injectUrls = (obj, parentKey = null) => {
             if (!obj || typeof obj !== 'object') return obj
-            if (Array.isArray(obj)) return obj.map(injectUrls)
+            if (Array.isArray(obj)) return obj.map(item => injectUrls(item, parentKey))
             const out = {}
             for (const [k, v] of Object.entries(obj)) {
-              if ((v === '__photo_uploaded__' || v === '__photo__') && keyToUrl[k]) {
-                out[k] = keyToUrl[k]
+              // Resolve URL: direct key first, then parent-child composite (both : and -)
+              const directUrl = keyToUrl[k]
+              const contextUrl = parentKey
+                ? (keyToUrl[`${parentKey}:${k}`] || keyToUrl[`${parentKey}-${k}`])
+                : null
+              const resolvedUrl = directUrl || contextUrl
+              if ((v === '__photo_uploaded__' || v === '__photo__') && resolvedUrl) {
+                out[k] = resolvedUrl
               } else if (typeof v === 'string' && (v === '__photo_uploaded__' || v === '__photo__')) {
-                // Try pngDataUrl match for equipment nested objects
-                out[k] = keyToUrl[k] || v
+                out[k] = resolvedUrl || v
               } else if (typeof v === 'object') {
-                out[k] = injectUrls(v)
+                out[k] = injectUrls(v, k)
               } else {
                 out[k] = v
               }
@@ -1694,6 +1702,8 @@ resetSafetyClimbingData: () => set({ safetyClimbingData: {}, safetyClimbingStep:
           toast: undefined,
           _toastTimer: undefined,
           showAutosave: undefined,
+          // Never persist appVersion — always comes from APP_VERSION_DISPLAY constant
+          appVersion: undefined,
           // Never persist formAssignments — always comes from server on mount
           formAssignments: undefined,
           // Never persist transient connectivity state
