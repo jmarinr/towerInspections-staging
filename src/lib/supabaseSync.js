@@ -45,7 +45,7 @@ function safeJsonParse(str, fallback) {
 
 function getAppVersion() {
   // Vite injects this at build time if you define it; fallback to package.json string shown in UI.
-  return import.meta.env.VITE_APP_VERSION || '2.5.88';
+  return import.meta.env.VITE_APP_VERSION || '2.5.89';
 }
 
 function loadMap(key) {
@@ -90,19 +90,9 @@ export function clearSupabaseLocalForForm(formCode) {
     }
   } catch (e) {}
 
-  // Clear uploaded photo URLs for this form
-  try {
-    const urlsRaw = localStorage.getItem('pti_uploaded_urls_v1')
-    if (urlsRaw) {
-      const urlsMap = JSON.parse(urlsRaw)
-      for (const key of Object.keys(urlsMap)) {
-        if (key.startsWith(formCode + '::')) {
-          delete urlsMap[key]
-        }
-      }
-      localStorage.setItem('pti_uploaded_urls_v1', JSON.stringify(urlsMap))
-    }
-  } catch (e) {}
+  // NOTE: pti_uploaded_urls_v1 is intentionally NOT cleared here.
+  // URLs are kept so photos can always be recovered after reload
+  // via recoverPhotoFromQueue, as a fallback to hydrateFormFromSupabase.
 }
 
 export async function ensureSubmissionId(formCode, formVersion = '1.2.1') {

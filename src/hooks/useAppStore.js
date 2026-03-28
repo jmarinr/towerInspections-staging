@@ -7,7 +7,7 @@ const getDefaultDate = () => new Date().toISOString().split('T')[0]
 const getDefaultTime = () => new Date().toTimeString().slice(0, 5)
 
 // Versión mostrada en UI y enviada como metadata a Supabase
-const APP_VERSION_DISPLAY = '2.5.88'
+const APP_VERSION_DISPLAY = '2.5.89'
 const FORM_CODE_ADDITIONAL = 'additional-photo-report'
 
 const isDataUrlString = (value) =>
@@ -259,6 +259,7 @@ export const useAppStore = create(
       },
 
       // ============ ACTIVE VISIT (ORDER) ============
+      appVersion: APP_VERSION_DISPLAY,
       activeVisit: null,
       selectedSite: null,  // { id, site_id, name, province, height_m, region_id }
       // v2.5.86 — collaborative inspection: tracks who has each form assigned

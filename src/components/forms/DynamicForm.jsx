@@ -42,7 +42,12 @@ export default function DynamicForm(props) {
       // evt.assetType is the field.id for DynamicForm photos
       const fieldId = evt.assetType
       setUploadStatuses(prev => ({ ...prev, [fieldId]: evt.status }))
-      // Auto-clear done/error
+      // On DONE: update field value to public URL so photo shows immediately
+      // without needing localStorage recovery or re-hydration
+      if (evt.status === PhotoUploadStatus.DONE && evt.publicUrl) {
+        onFieldChange(fieldId, evt.publicUrl)
+      }
+      // Auto-clear done/error status badge
       if (evt.status === PhotoUploadStatus.DONE || evt.status === PhotoUploadStatus.ERROR) {
         clearTimeout(statusTimersRef.current[fieldId])
         const delay = evt.status === PhotoUploadStatus.DONE ? 3000 : 5000
