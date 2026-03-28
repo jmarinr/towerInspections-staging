@@ -47,9 +47,7 @@ WHERE routine_schema = 'public' AND routine_name = 'claim_form';
 
 
 -- ── 5. Revertir policy submissions_select ───────────────────────────────────
--- La policy fue modificada en v2.5.86 para permitir que inspectores
--- del mismo org puedan ver submissions de colegas (necesario para colaboración).
--- Original (solo ve los tuyos o los de tu empresa si eres supervisor/admin):
+-- ROLLBACK submissions_select — vuelve al estado anterior a v2.5.86
 
 DROP POLICY IF EXISTS submissions_select ON public.submissions;
 
