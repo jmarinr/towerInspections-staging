@@ -45,7 +45,7 @@ function safeJsonParse(str, fallback) {
 
 function getAppVersion() {
   // Vite injects this at build time if you define it; fallback to package.json string shown in UI.
-  return import.meta.env.VITE_APP_VERSION || '2.5.95';
+  return import.meta.env.VITE_APP_VERSION || '2.5.96';
 }
 
 function loadMap(key) {
@@ -190,12 +190,13 @@ export async function ensureSubmissionId(formCode, formVersion = '1.2.1') {
   return data.id;
 }
 
-export function queueSubmissionSync(formCode, payload, formVersion = '1.2.1') {
+export function queueSubmissionSync(formCode, payload, formVersion = '1.2.1', assignedTo = null) {
   const map = loadMap(PENDING_SYNC_KEY);
   map[formCode] = {
     formCode,
     formVersion,
     payload,
+    assignedTo,
     ts: Date.now(),
   };
   saveMap(PENDING_SYNC_KEY, map);
@@ -303,6 +304,7 @@ export async function flushSupabaseQueues({ formCode } = {}) {
           site_visit_id: siteVisitId,
           submitted_by_user_id: item.payload?.submitted_by_user_id || null,
           finalized: item.payload?.payload?.finalized === true,
+          ...(item.assignedTo ? { assigned_to: item.assignedTo } : {}),
           // Site catalog references — only include if columns exist in DB
           // Run migration first: ALTER TABLE submissions ADD COLUMN IF NOT EXISTS site_id uuid, region_id uuid
           // site_id: item.payload?.payload?.data?.siteInfo?.siteRef || null,

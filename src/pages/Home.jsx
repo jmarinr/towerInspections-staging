@@ -229,8 +229,19 @@ export default function Home() {
         }
       }
 
+      // Merge: preserve local claims that DB doesn't know about yet
+      // (happens when user took a free form but first autosave hasn't completed)
+      const mergedMap = { ...newMap }
+      for (const [code, oldA] of Object.entries(currentMap)) {
+        const newA = newMap[code]
+        // If I locally claimed a form but DB still shows null, keep my local claim
+        if (oldA?.assignedTo === me && (!newA?.assignedTo || newA.assignedTo === null)) {
+          mergedMap[code] = { ...newA, assignedTo: me }
+        }
+      }
+
       // Re-hydrate forms whose assignment changed (new data from another inspector)
-      for (const [code, newA] of Object.entries(newMap)) {
+      for (const [code, newA] of Object.entries(mergedMap)) {
         const oldA = currentMap[code]
         const assignmentChanged = newA?.assignmentVersion !== oldA?.assignmentVersion
         const submissionChanged = newA?.submissionId !== oldA?.submissionId
@@ -239,7 +250,7 @@ export default function Home() {
         }
       }
 
-      setFormAssignments(newMap)
+      setFormAssignments(mergedMap)
     } catch (_) {}
   }, [setFormAssignments])
 
@@ -312,7 +323,7 @@ export default function Home() {
               </span>
             )}
           </div>
-          <p className="text-white/70 text-sm mt-0.5">Sistema de Inspección v2.5.95</p>
+          <p className="text-white/70 text-sm mt-0.5">Sistema de Inspección v2.5.96</p>
           {session && (
             <div className="mt-2 flex items-center gap-1.5 bg-white/15 rounded-full px-3 py-1">
               <User size={12} />
