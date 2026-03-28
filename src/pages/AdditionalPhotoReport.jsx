@@ -4,7 +4,7 @@
  * Nomenclatura: {SITE_ID}_{ACRONIMO}_{DDMMAA}_(N)
  * Ejemplo: MJA0007_ACC_100817_(1)
  */
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Camera, Image, Check, Plus, X, Loader2, AlertCircle,
@@ -20,6 +20,7 @@ import { useAppStore, isDisplayablePhoto, recoverPhotoFromQueue } from '../hooks
 import { processImageFile } from '../lib/photoUtils'
 import { PHOTO_CATEGORIES } from '../data/additionalPhotoConfig'
 import { queueAssetUpload, flushSupabaseQueues } from '../lib/supabaseSync'
+import { onPhotoStatus, PhotoUploadStatus } from '../lib/photoEvents'
 import ConfirmFinalizeModal from '../components/ui/ConfirmFinalizeModal'
 
 const FORM_CODE = 'additional-photo-report'
@@ -61,13 +62,28 @@ function PhotoSlot({ label, acronym, index, value, meta, siteId, startedAt, onCh
   const filename = meta?.filename || buildFilename(siteId, acronym, index, startedAt)
   const assetKey = filename   // filename IS the asset key → Storage path matches nomenclatura
 
+  const [confirmedUrl, setConfirmedUrl] = useState(null)
+  const statusTimerRef = useRef(null)
+
+  // Subscribe to upload events — on DONE store public URL in local state
+  useEffect(() => {
+    const unsub = onPhotoStatus((evt) => {
+      if (evt.formCode === FORM_CODE && evt.assetType === assetKey) {
+        if (evt.status === PhotoUploadStatus.DONE && evt.publicUrl) {
+          setConfirmedUrl(evt.publicUrl)
+        }
+      }
+    })
+    return () => { unsub(); clearTimeout(statusTimerRef.current) }
+  }, [assetKey])
+
   const recovered   = useMemo(() => {
     if (isDisplayablePhoto(value)) return value
     if (value) return recoverPhotoFromQueue(FORM_CODE, assetKey)
     return null
   }, [value, assetKey])
 
-  const displayable = recovered || (isDisplayablePhoto(value) ? value : null)
+  const displayable = confirmedUrl || recovered || (isDisplayablePhoto(value) ? value : null)
   const isUploaded  = !!value && !displayable
 
   const handleFile = async (e) => {

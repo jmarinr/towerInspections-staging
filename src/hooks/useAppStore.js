@@ -7,7 +7,7 @@ const getDefaultDate = () => new Date().toISOString().split('T')[0]
 const getDefaultTime = () => new Date().toTimeString().slice(0, 5)
 
 // Versión mostrada en UI y enviada como metadata a Supabase
-const APP_VERSION_DISPLAY = '2.5.92'
+const APP_VERSION_DISPLAY = '2.5.93'
 const FORM_CODE_ADDITIONAL = 'additional-photo-report'
 
 const isDataUrlString = (value) =>
@@ -580,6 +580,24 @@ export const useAppStore = create(
             return out
           }
           data = injectUrls(data)
+
+          // Special restoration for additional-photo-report
+          // Photos are stored as arrays with filenames in photoMeta — injectUrls can't handle this
+          if (formCode === 'additional-photo-report' && data.photos && data.photoMeta) {
+            for (const [catId, photoArray] of Object.entries(data.photos)) {
+              if (!Array.isArray(photoArray)) continue
+              const catMeta = data.photoMeta[catId] || {}
+              data.photos[catId] = photoArray.map((photoVal, idx) => {
+                if (photoVal !== '__photo_uploaded__' && photoVal !== '__photo__') return photoVal
+                // Find URL by filename stored in photoMeta
+                const meta = catMeta[String(idx)]
+                if (meta?.filename && keyToUrl[meta.filename]) {
+                  return keyToUrl[meta.filename]
+                }
+                return photoVal
+              })
+            }
+          }
         }
 
         const stateMap = {
