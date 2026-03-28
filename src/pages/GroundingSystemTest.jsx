@@ -155,7 +155,6 @@ export default function GroundingSystemTest() {
         try {
           setShowConfirm(true)
           return
-          navigate('/')
         } catch (e) {
           console.error('[Grounding] finalize error:', e)
           showToast('Error al enviar. Intente de nuevo.', 'error')
