@@ -208,6 +208,17 @@ export default function Home() {
           )
         }
       }
+
+      // Re-hydrate forms whose assignment changed (new data from another inspector)
+      for (const [code, newA] of Object.entries(newMap)) {
+        const oldA = currentMap[code]
+        const assignmentChanged = newA?.assignmentVersion !== oldA?.assignmentVersion
+        const submissionChanged = newA?.submissionId !== oldA?.submissionId
+        if ((assignmentChanged || submissionChanged) && newA?.assignedTo && newA.assignedTo !== me) {
+          rehydrateForm(code, visit.id).catch(() => {})
+        }
+      }
+
       setFormAssignments(newMap)
     } catch (_) {}
   }, [setFormAssignments])
@@ -281,7 +292,7 @@ export default function Home() {
               </span>
             )}
           </div>
-          <p className="text-white/70 text-sm mt-0.5">Sistema de Inspección v2.5.87</p>
+          <p className="text-white/70 text-sm mt-0.5">Sistema de Inspección v2.5.88</p>
           {session && (
             <div className="mt-2 flex items-center gap-1.5 bg-white/15 rounded-full px-3 py-1">
               <User size={12} />
@@ -392,10 +403,13 @@ export default function Home() {
                   : ''
                   : ''
 
-                const handleCardClick = () => {
+                const handleCardClick = async () => {
                   if (isCompleted || hydrating) return
                   if (!writable && !assignedToOther) return
-                  // Collaborator clicking an occupied form → go to read-only view via FormIntro
+                  // Always re-fetch latest data when viewing an occupied form
+                  if (assignedToOther) {
+                    await rehydrateForm(formCode, activeVisit?.id)
+                  }
                   navigate(form.route)
                 }
 
