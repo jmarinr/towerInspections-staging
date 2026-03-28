@@ -7,7 +7,7 @@ const getDefaultDate = () => new Date().toISOString().split('T')[0]
 const getDefaultTime = () => new Date().toTimeString().slice(0, 5)
 
 // Versión mostrada en UI y enviada como metadata a Supabase
-const APP_VERSION_DISPLAY = '2.6.1'
+const APP_VERSION_DISPLAY = '2.6.2'
 const FORM_CODE_ADDITIONAL = 'additional-photo-report'
 
 const isDataUrlString = (value) =>
@@ -981,7 +981,7 @@ export const useAppStore = create(
             },
           },
         }))
-        get().triggerAutosave('inspection-general')
+        get().triggerAutosave('executed-maintenance')
       },
 
       updatePMExecutedPhoto: (activityId, photoType, photoData) => {
@@ -1244,7 +1244,7 @@ export const useAppStore = create(
           const items = (current.torre?.items || []).map((it, i) => (i === index ? { ...it, [field]: value } : it))
           return { equipmentInventoryData: { ...current, torre: { ...(current.torre || {}), items } } }
         })
-        get().triggerAutosave('inspection-general')
+        get().triggerAutosave('equipment')
       },
 
       // --- PISO: clientes + gabinetes ---
@@ -1265,7 +1265,7 @@ export const useAppStore = create(
             },
           }
         })
-        get().triggerAutosave('inspection-general')
+        get().triggerAutosave('equipment')
       },
 
       removeFloorClient: (index) => {
@@ -1275,7 +1275,7 @@ export const useAppStore = create(
           clientes.splice(index, 1)
           return { equipmentInventoryData: { ...current, piso: { ...(current.piso || {}), clientes: clientes.length ? clientes : [{ tipoCliente: 'ancla', nombreCliente: '', areaArrendada: '', areaEnUso: '', placaEquipos: '', gabinetes: [{ gabinete: '', largo: '', ancho: '', alto: '', fotoRef: '' }] }] } } }
         })
-        get().triggerAutosave('inspection-general')
+        get().triggerAutosave('equipment')
       },
 
       updateFloorClientField: (index, field, value) => {
@@ -1284,7 +1284,7 @@ export const useAppStore = create(
           const clientes = (current.piso?.clientes || []).map((c, i) => (i === index ? { ...c, [field]: value } : c))
           return { equipmentInventoryData: { ...current, piso: { ...(current.piso || {}), clientes } } }
         })
-        get().triggerAutosave('inspection-general')
+        get().triggerAutosave('equipment')
       },
 
       addCabinet: (clientIndex) => {
@@ -1297,7 +1297,7 @@ export const useAppStore = create(
           })
           return { equipmentInventoryData: { ...current, piso: { ...(current.piso || {}), clientes } } }
         })
-        get().triggerAutosave('inspection-general')
+        get().triggerAutosave('equipment')
       },
 
       removeCabinet: (clientIndex, cabinetIndex) => {
@@ -1311,7 +1311,7 @@ export const useAppStore = create(
           })
           return { equipmentInventoryData: { ...current, piso: { ...(current.piso || {}), clientes } } }
         })
-        get().triggerAutosave('inspection-general')
+        get().triggerAutosave('equipment')
       },
 
       updateCabinetField: (clientIndex, cabinetIndex, field, value) => {
@@ -1324,7 +1324,7 @@ export const useAppStore = create(
           })
           return { equipmentInventoryData: { ...current, piso: { ...(current.piso || {}), clientes } } }
         })
-        get().triggerAutosave('inspection-general')
+        get().triggerAutosave('equipment')
       },
 
       // --- DISTRIBUCIÓN / CROQUIS / PLANO ---

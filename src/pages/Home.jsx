@@ -177,14 +177,15 @@ export default function Home() {
       return
     }
 
-    setHydrating(true)
-    if (!isOwnOrder) resetAllForms()
+    // Use async inner function so we can await flush before reading Supabase
+    const runHydration = async () => {
+      setHydrating(true)
+      if (!isOwnOrder) resetAllForms()
 
-    // Flush any pending autosaves before reading from Supabase
-    // Prevents race condition: navigate to Home while autosave still pending → read stale data
-    flushSupabaseQueues().catch(() => {})
+      // Flush any pending autosaves FIRST — prevents reading stale data
+      try { await flushSupabaseQueues() } catch (_) {}
 
-    fetchVisitSubmissions(activeVisit.id)
+      return fetchVisitSubmissions(activeVisit.id)
       .then(async (submissions) => {
         // Fetch all assets in parallel
         const submissionIds = submissions.map((s) => s.id).filter(Boolean)
@@ -213,6 +214,8 @@ export default function Home() {
       })
       .catch((err) => console.warn('[Home] fetchVisitSubmissions failed', err?.message))
       .finally(() => setHydrating(false))
+    }
+    runHydration()
   }, [activeVisit?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── 30-second polling: refresh assignments ───────────────────────────────
@@ -334,7 +337,7 @@ export default function Home() {
               </span>
             )}
           </div>
-          <p className="text-white/70 text-sm mt-0.5">Sistema de Inspección v2.6.1</p>
+          <p className="text-white/70 text-sm mt-0.5">Sistema de Inspección v2.6.2</p>
           {session && (
             <div className="mt-2 flex items-center gap-1.5 bg-white/15 rounded-full px-3 py-1">
               <User size={12} />
