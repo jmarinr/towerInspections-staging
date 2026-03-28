@@ -10,6 +10,7 @@ import {
   closeSiteVisit, fetchVisitSubmissions, fetchSubmissionAssets,
   fetchVisitAssignments, fetchSubmissionForForm,
 } from '../lib/siteVisitService'
+import { flushSupabaseQueues } from '../lib/supabaseSync'
 import ClaimFormModal from '../components/ui/ClaimFormModal'
 
 // ─── Form definitions (unchanged from v2.5.85) ───────────────────────────────
@@ -179,6 +180,10 @@ export default function Home() {
     setHydrating(true)
     if (!isOwnOrder) resetAllForms()
 
+    // Flush any pending autosaves before reading from Supabase
+    // Prevents race condition: navigate to Home while autosave still pending → read stale data
+    try { await flushSupabaseQueues() } catch (_) {}
+
     fetchVisitSubmissions(activeVisit.id)
       .then(async (submissions) => {
         // Fetch all assets in parallel
@@ -329,7 +334,7 @@ export default function Home() {
               </span>
             )}
           </div>
-          <p className="text-white/70 text-sm mt-0.5">Sistema de Inspección v2.5.99</p>
+          <p className="text-white/70 text-sm mt-0.5">Sistema de Inspección v2.6.0</p>
           {session && (
             <div className="mt-2 flex items-center gap-1.5 bg-white/15 rounded-full px-3 py-1">
               <User size={12} />

@@ -45,7 +45,7 @@ function safeJsonParse(str, fallback) {
 
 function getAppVersion() {
   // Vite injects this at build time if you define it; fallback to package.json string shown in UI.
-  return import.meta.env.VITE_APP_VERSION || '2.5.99';
+  return import.meta.env.VITE_APP_VERSION || '2.6.0';
 }
 
 function loadMap(key) {
@@ -354,15 +354,19 @@ export async function flushSupabaseQueues({ formCode } = {}) {
         // Otherwise fall back to upsert by device-based constraint
         let error
         if (item.submissionId) {
-          // Direct update — avoids creating duplicate rows when inspector B edits inspector A's form
+          // Direct update by ID — works for both own forms and cross-device collaboration
+          // Build update payload explicitly to avoid sending device_id/org_code
+          const updatePayload = {
+            form_version: row.form_version,
+            app_version: row.app_version,
+            submitted_by_user_id: row.submitted_by_user_id,
+            finalized: row.finalized,
+            payload: row.payload,
+            ...(item.assignedTo ? { assigned_to: item.assignedTo } : {}),
+          }
           const { error: updErr } = await supabase
             .from('submissions')
-            .update({
-              ...row,
-              // Don't overwrite device_id or org_code on existing rows
-              device_id: undefined,
-              org_code: undefined,
-            })
+            .update(updatePayload)
             .eq('id', item.submissionId);
           error = updErr
           // Also cache this submission ID for ensureSubmissionId
@@ -373,10 +377,30 @@ export async function flushSupabaseQueues({ formCode } = {}) {
             saveMap(SUBMISSION_IDS_KEY, idsMap)
           } catch (_) {}
         } else {
-          const { error: upsErr } = await supabase
+          const { data: upserted, error: upsErr } = await supabase
             .from('submissions')
-            .upsert(row, { onConflict: 'org_code,device_id,form_code,site_visit_id' });
+            .upsert(row, { onConflict: 'org_code,device_id,form_code,site_visit_id' })
+            .select('id')
+            .maybeSingle();
           error = upsErr
+          // Cache the new submission ID so future saves use UPDATE by ID
+          if (!upsErr && upserted?.id) {
+            try {
+              const idsMap = loadMap(SUBMISSION_IDS_KEY)
+              const cacheKey = `${canonicalFormCode}::${siteVisitId}`
+              idsMap[cacheKey] = upserted.id
+              saveMap(SUBMISSION_IDS_KEY, idsMap)
+              // Also update formAssignments in localStorage so triggerAutosave picks it up
+              const storeRaw = localStorage.getItem('pti-inspect-storage')
+              if (storeRaw) {
+                const store = JSON.parse(storeRaw)
+                if (store?.state?.formAssignments?.[canonicalFormCode]) {
+                  store.state.formAssignments[canonicalFormCode].submissionId = upserted.id
+                  localStorage.setItem('pti-inspect-storage', JSON.stringify(store))
+                }
+              }
+            } catch (_) {}
+          }
         }
 
         if (error) throw error;
