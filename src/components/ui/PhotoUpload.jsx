@@ -36,6 +36,10 @@ export default function PhotoUpload({ type, photo, value, onCapture, onRemove, f
     const unsub = onPhotoStatus((evt) => {
       if (evt.formCode === formCode && evt.assetType === assetType) {
         setUploadStatus(evt.status)
+        // On DONE: update the store value to the public URL so photo shows immediately
+        if (evt.status === PhotoUploadStatus.DONE && evt.publicUrl && onCapture) {
+          onCapture(evt.publicUrl)
+        }
         // Auto-clear 'done' after 3 seconds
         if (evt.status === PhotoUploadStatus.DONE) {
           clearTimeout(statusTimerRef.current)
