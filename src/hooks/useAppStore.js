@@ -7,7 +7,7 @@ const getDefaultDate = () => new Date().toISOString().split('T')[0]
 const getDefaultTime = () => new Date().toTimeString().slice(0, 5)
 
 // Versión mostrada en UI y enviada como metadata a Supabase
-const APP_VERSION_DISPLAY = '2.5.98'
+const APP_VERSION_DISPLAY = '2.5.99'
 const FORM_CODE_ADDITIONAL = 'additional-photo-report'
 
 const isDataUrlString = (value) =>
@@ -483,12 +483,14 @@ export const useAppStore = create(
           if (formCode) {
             const payload = get().getSupabasePayloadForForm(formCode)
             if (payload) {
-              // Pass assigned_to if this form was explicitly claimed by current user
+              // Pass assigned_to and submissionId for cross-device collaboration
               const canonCode = payload.form_code || formCode
               const assignment = get().formAssignments?.[canonCode]
               const myUsername = get().session?.username
               const assignedTo = (assignment?.assignedTo === myUsername) ? myUsername : null
-              queueSubmissionSync(formCode, payload, APP_VERSION_DISPLAY, assignedTo)
+              // submissionId: use known DB row id to UPDATE directly (avoids duplicate rows)
+              const submissionId = assignment?.submissionId || null
+              queueSubmissionSync(formCode, payload, APP_VERSION_DISPLAY, assignedTo, submissionId)
               flushSupabaseQueues({ formCode })
             }
           }

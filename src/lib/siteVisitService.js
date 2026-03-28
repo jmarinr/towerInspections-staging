@@ -64,8 +64,22 @@ export async function fetchVisitSubmissions(visitId) {
     .from('submissions')
     .select('id, form_code, finalized, payload, updated_at, assigned_to, assignment_version, assigned_at')
     .eq('site_visit_id', visitId)
+    .order('updated_at', { ascending: false })
   if (error) throw error
-  return data || []
+  if (!data || data.length === 0) return []
+
+  // Deduplicate: one row per form_code — prefer assigned row > most recently updated
+  const seen = new Map()
+  for (const row of data) {
+    const existing = seen.get(row.form_code)
+    if (!existing) {
+      seen.set(row.form_code, row)
+    } else if (row.assigned_to && !existing.assigned_to) {
+      // Prefer the assigned row
+      seen.set(row.form_code, row)
+    }
+  }
+  return Array.from(seen.values())
 }
 
 /** Lightweight poll — assignment info + minimal data indicator */
@@ -99,13 +113,16 @@ export async function fetchSubmissionAssets(submissionIds) {
 }
 
 export async function fetchSubmissionForForm(visitId, formCode) {
+  // Fetch all rows — prefer assigned row > most recently updated
   const { data, error } = await supabase
     .from('submissions')
-    .select('form_code, finalized, payload, updated_at, assigned_to, assignment_version, assigned_at')
+    .select('id, form_code, finalized, payload, updated_at, assigned_to, assignment_version, assigned_at')
     .eq('site_visit_id', visitId).eq('form_code', formCode)
-    .order('updated_at', { ascending: false }).limit(1).maybeSingle()
+    .order('updated_at', { ascending: false })
   if (error) throw error
-  return data || null
+  if (!data || data.length === 0) return null
+  const assigned = data.find(r => r.assigned_to)
+  return assigned || data[0]
 }
 
 /**

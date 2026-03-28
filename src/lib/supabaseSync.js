@@ -45,7 +45,7 @@ function safeJsonParse(str, fallback) {
 
 function getAppVersion() {
   // Vite injects this at build time if you define it; fallback to package.json string shown in UI.
-  return import.meta.env.VITE_APP_VERSION || '2.5.98';
+  return import.meta.env.VITE_APP_VERSION || '2.5.99';
 }
 
 function loadMap(key) {
@@ -149,7 +149,38 @@ export async function ensureSubmissionId(formCode, formVersion = '1.2.1') {
   const cacheKey = `${canonicalCode}::${siteVisitId}`;
   if (map[cacheKey]) return map[cacheKey];
 
-  // First try to find the existing submission row (created by autosave)
+  // Check formAssignments in Zustand store for known submission ID (cross-device)
+  try {
+    const storeRaw = localStorage.getItem('pti-inspect-storage');
+    if (storeRaw) {
+      const store = JSON.parse(storeRaw);
+      const assignments = store?.state?.formAssignments || {};
+      const assignment = assignments[canonicalCode];
+      if (assignment?.submissionId) {
+        map[cacheKey] = assignment.submissionId;
+        saveMap(SUBMISSION_IDS_KEY, map);
+        return assignment.submissionId;
+      }
+    }
+  } catch (_) {}
+
+  // First try to find the existing submission row by site_visit_id + form_code (any device)
+  const { data: existingAny } = await supabase
+    .from('submissions')
+    .select('id')
+    .eq('form_code', canonicalCode)
+    .eq('site_visit_id', siteVisitId)
+    .order('updated_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (existingAny) {
+    map[cacheKey] = existingAny.id;
+    saveMap(SUBMISSION_IDS_KEY, map);
+    return existingAny.id;
+  }
+
+  // Fall back: find by device_id (own submissions only)
   const { data: existing } = await supabase
     .from('submissions')
     .select('id')
@@ -190,13 +221,14 @@ export async function ensureSubmissionId(formCode, formVersion = '1.2.1') {
   return data.id;
 }
 
-export function queueSubmissionSync(formCode, payload, formVersion = '1.2.1', assignedTo = null) {
+export function queueSubmissionSync(formCode, payload, formVersion = '1.2.1', assignedTo = null, submissionId = null) {
   const map = loadMap(PENDING_SYNC_KEY);
   map[formCode] = {
     formCode,
     formVersion,
     payload,
     assignedTo,
+    submissionId,  // known DB row id — use UPDATE by id instead of upsert by constraint
     ts: Date.now(),
   };
   saveMap(PENDING_SYNC_KEY, map);
@@ -318,11 +350,34 @@ export async function flushSupabaseQueues({ formCode } = {}) {
           },
         };
 
-        // Constraint: (org_code, device_id, form_code, site_visit_id)
-        // Each order+form+device gets its own row
-        const { error } = await supabase
-          .from('submissions')
-          .upsert(row, { onConflict: 'org_code,device_id,form_code,site_visit_id' });
+        // If we know the submission ID (cross-device collaboration), UPDATE directly by ID
+        // Otherwise fall back to upsert by device-based constraint
+        let error
+        if (item.submissionId) {
+          // Direct update — avoids creating duplicate rows when inspector B edits inspector A's form
+          const { error: updErr } = await supabase
+            .from('submissions')
+            .update({
+              ...row,
+              // Don't overwrite device_id or org_code on existing rows
+              device_id: undefined,
+              org_code: undefined,
+            })
+            .eq('id', item.submissionId);
+          error = updErr
+          // Also cache this submission ID for ensureSubmissionId
+          try {
+            const idsMap = loadMap(SUBMISSION_IDS_KEY)
+            const cacheKey = `${canonicalFormCode}::${siteVisitId}`
+            idsMap[cacheKey] = item.submissionId
+            saveMap(SUBMISSION_IDS_KEY, idsMap)
+          } catch (_) {}
+        } else {
+          const { error: upsErr } = await supabase
+            .from('submissions')
+            .upsert(row, { onConflict: 'org_code,device_id,form_code,site_visit_id' });
+          error = upsErr
+        }
 
         if (error) throw error;
 
