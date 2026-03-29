@@ -337,7 +337,7 @@ export default function Home() {
               </span>
             )}
           </div>
-          <p className="text-white/70 text-sm mt-0.5">Sistema de Inspección v2.6.3</p>
+          <p className="text-white/70 text-sm mt-0.5">Sistema de Inspección v2.6.4</p>
           {session && (
             <div className="mt-2 flex items-center gap-1.5 bg-white/15 rounded-full px-3 py-1">
               <User size={12} />
@@ -513,9 +513,9 @@ export default function Home() {
                             <div className="border-t border-gray-100 pt-3">
                               <button
                                 onClick={() => openClaimModal(form, 'take')}
-                                className="w-full py-2 rounded-xl bg-gray-900 text-white text-xs font-semibold tracking-wide active:opacity-80 transition-all"
+                                className="w-full py-2.5 rounded-xl border border-gray-200 bg-white text-gray-700 text-sm font-semibold active:bg-gray-50 transition-all flex items-center justify-center gap-2"
                               >
-                                Tomar e iniciar
+                                <Users size={14} className="text-gray-400" /> Tomar e iniciar
                               </button>
                             </div>
                           </div>
