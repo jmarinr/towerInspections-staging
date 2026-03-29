@@ -277,6 +277,7 @@ export default function OrderScreen() {
               <div className="space-y-2.5">
                 {teamVisits.map((v) => (
                   <div key={v.id} className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+                    {/* Card body */}
                     <div className="p-4">
                       <div className="flex justify-between items-start mb-3">
                         <div>
@@ -286,16 +287,17 @@ export default function OrderScreen() {
                         </div>
                         <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-green-50 text-green-600 border border-green-200">Abierta</span>
                       </div>
-                      <div className="pt-3 border-t border-gray-100">
-                        <span className="flex items-center gap-1 text-xs text-gray-500 mb-3">
-                          <Clock size={12} />
-                          {new Date(v.started_at).toLocaleDateString('es', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
-                        </span>
-                        <button onClick={() => handleJoinVisit(v)}
-                          className="w-full py-2.5 rounded-xl border border-gray-200 bg-white text-gray-700 text-sm font-semibold active:bg-gray-50 transition-all flex items-center justify-center gap-2">
-                          <Users size={14} className="text-gray-400" /> Unirse y colaborar
-                        </button>
-                      </div>
+                      <span className="flex items-center gap-1 text-xs text-gray-500">
+                        <Clock size={12} />
+                        {new Date(v.started_at).toLocaleDateString('es', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    </div>
+                    {/* Card footer — button full-width inside card */}
+                    <div className="border-t border-gray-100 px-4 py-3">
+                      <button onClick={() => handleJoinVisit(v)}
+                        className="w-full py-2.5 rounded-xl border border-gray-200 bg-white text-gray-700 text-sm font-semibold active:bg-gray-50 transition-all flex items-center justify-center gap-2">
+                        <Users size={14} className="text-gray-400" /> Unirse y colaborar
+                      </button>
                     </div>
                   </div>
                 ))}
