@@ -458,7 +458,7 @@ export default function FormIntro() {
             >
               {loading ? 'Iniciando…'
                 : (!selectedSite && !activeVisit?.site_id) ? 'Seleccione un sitio primero'
-                : hasPreviousData ? 'Continuar / Reiniciar →'
+                : hasPreviousData ? 'Continuar →'
                 : 'Iniciar Formulario →'}
             </button>
           )}
@@ -506,12 +506,6 @@ export default function FormIntro() {
                 className="w-full py-3.5 rounded-xl bg-primary text-white text-sm font-bold active:scale-[0.98] transition-all shadow-sm"
               >
                 Continuar con datos previos
-              </button>
-              <button
-                onClick={handleRestart}
-                className="w-full py-3.5 rounded-xl border-2 border-red-200 bg-red-50 text-red-600 text-sm font-bold active:scale-[0.98] transition-all"
-              >
-                Reiniciar formulario
               </button>
               <button
                 onClick={() => setShowResumeDialog(false)}
