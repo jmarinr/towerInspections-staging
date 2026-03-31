@@ -258,7 +258,7 @@ case 'drawing-template':
 
       <div className="px-4 pb-32">
         <div className="flex items-center justify-between gap-2 mb-2">
-          <FormMetaBar meta={formMeta?.equipment} formCode="inventario" formRoute="/intro/equipment" />
+          <div className="flex-1 min-w-0"><FormMetaBar meta={formMeta?.equipment} formCode="inventario" formRoute="/intro/equipment" /></div>
           <button
             className="px-3 py-2 rounded-xl border border-red-200 text-red-600 font-bold text-sm active:scale-95 flex-shrink-0"
             onClick={() => {

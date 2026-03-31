@@ -114,7 +114,9 @@ export default function InventarioEquiposV2() {
       <main className="flex-1 px-4 pb-44 pt-4 overflow-x-hidden">
         {/* Meta bar + reset */}
         <div className="flex items-start justify-between gap-2">
-          <FormMetaBar meta={meta} formCode="inventario-v2" formRoute="/intro/equipment-v2" />
+          <div className="flex-1 min-w-0">
+            <FormMetaBar meta={meta} formCode="inventario-v2" formRoute="/intro/equipment-v2" />
+          </div>
           <button
             className="px-3 py-2 rounded-xl border border-red-200 text-red-600 font-bold text-sm active:scale-95 flex-shrink-0"
             onClick={() => {

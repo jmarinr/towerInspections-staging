@@ -92,7 +92,7 @@ export default function InspeccionSitio() {
       <StepPills steps={steps} currentStep={currentStepId} completedSteps={completedSteps} onStepClick={goToStep} />
       <main className="flex-1 px-4 pb-44 pt-4 overflow-x-hidden">
         <div className="flex items-center justify-between gap-2">
-          <FormMetaBar meta={formMeta?.inspeccion} formCode="inspeccion" formRoute="/intro/inspeccion" />
+          <div className="flex-1 min-w-0"><FormMetaBar meta={formMeta?.inspeccion} formCode="inspeccion" formRoute="/intro/inspeccion" /></div>
           <button
             className="px-3 py-2 rounded-xl border border-red-200 text-red-600 font-bold text-sm active:scale-95"
             onClick={async () => {
