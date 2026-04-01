@@ -7,7 +7,7 @@ const getDefaultDate = () => new Date().toISOString().split('T')[0]
 const getDefaultTime = () => new Date().toTimeString().slice(0, 5)
 
 // Versión mostrada en UI y enviada como metadata a Supabase
-const APP_VERSION_DISPLAY = '2.7.1'
+const APP_VERSION_DISPLAY = '2.7.2'
 const FORM_CODE_ADDITIONAL = 'additional-photo-report'
 
 const isDataUrlString = (value) =>
@@ -1181,7 +1181,43 @@ export const useAppStore = create(
       updateEquipmentV2Carriers: (carriers) => {
         set((state) => {
           const current = state.equipmentInventoryV2Data || {}
-          return { equipmentInventoryV2Data: { ...current, carriers } }
+
+          // ── Sync Carriers → Torre (all fields except orientacion) ──
+          // Flatten all carrier items into torre.items, preserving each row's
+          // existing orientacion so Torre can keep its independent values.
+          const existingTorreItems = current.torre?.items || []
+          const syncedTorreItems = carriers.flatMap((carrier, cIdx) =>
+            (carrier.items || []).map((item, rIdx) => {
+              // Find the matching existing torre row by flat index to preserve orientacion
+              const flatIdx = carriers.slice(0, cIdx).reduce((acc, c) => acc + (c.items?.length || 0), 0) + rIdx
+              const existingOrientacion = existingTorreItems[flatIdx]?.orientacion || ''
+              return {
+                alturaMts:    item.alturaMts    || '',
+                orientacion:  existingOrientacion,           // preserved independently
+                tipoEquipo:   item.tipoEquipo   || '',
+                cantidad:     item.cantidad     || '',
+                alto:         item.alto         || '',
+                ancho:        item.ancho        || '',
+                profundidad:  item.profundidad  || '',
+                areaM2:       item.areaM2       || '',
+                carrier:      carrier.nombre    || '',       // auto-populated from carrier name
+                comentario:   item.comentario   || '',
+              }
+            })
+          )
+
+          // If no items at all, keep a blank row so Torre is never empty
+          const torreItems = syncedTorreItems.length > 0
+            ? syncedTorreItems
+            : [{ alturaMts: '', orientacion: '', tipoEquipo: '', cantidad: '', alto: '', ancho: '', profundidad: '', areaM2: '', carrier: '' }]
+
+          return {
+            equipmentInventoryV2Data: {
+              ...current,
+              carriers,
+              torre: { ...(current.torre || {}), items: torreItems },
+            },
+          }
         })
         // Photo uploads are handled directly by CarrierSection via queueCarrierPhoto
         // NOT here — scanning all carriers on every field change caused duplicate uploads
