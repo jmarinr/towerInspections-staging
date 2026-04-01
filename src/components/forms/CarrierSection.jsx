@@ -46,10 +46,12 @@ export default function CarrierSection() {
       return updated
     }))
 
-  const addItem = (cIdx) =>
+  const addItem = (cIdx) => {
+    const carrierName = carriers[cIdx]?.items?.[0]?.carrier || carriers[cIdx]?.nombre || ''
     updateEquipmentV2Carriers(carriers.map((c, i) =>
-      i !== cIdx ? c : { ...c, items: [...(c.items || []), { ...emptyItem(), carrier: c.nombre || '' }] }
+      i !== cIdx ? c : { ...c, items: [...(c.items || []), { ...emptyItem(), carrier: carrierName }] }
     ))
+  }
 
   const removeItem = (cIdx, rIdx) =>
     updateEquipmentV2Carriers(carriers.map((c, i) => {
@@ -61,6 +63,10 @@ export default function CarrierSection() {
   const updateItemField = (cIdx, rIdx, field, value) =>
     updateEquipmentV2Carriers(carriers.map((c, i) => {
       if (i !== cIdx) return c
+      // When carrier name is typed in any row, propagate to ALL rows in this block
+      if (field === 'carrier') {
+        return { ...c, items: (c.items || []).map(it => ({ ...it, carrier: value })) }
+      }
       return { ...c, items: (c.items || []).map((it, ri) => ri === rIdx ? { ...it, [field]: value } : it) }
     }))
 
