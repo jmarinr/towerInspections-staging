@@ -13,6 +13,13 @@ export const equipmentInventoryV2Steps = [
     type: 'form',
   },
   {
+    id: 'carriers',
+    title: 'Carriers',
+    description: 'Datos y fotos por cada carrier del sitio.',
+    icon: '📡',
+    type: 'carriers',
+  },
+  {
     id: 'inventario-torre',
     title: 'Torre',
     description: 'Inventario de equipos en torre con dimensiones desglosadas.',
@@ -25,13 +32,6 @@ export const equipmentInventoryV2Steps = [
     description: 'Clientes y gabinetes en piso (tabla por cliente).',
     icon: '🏢',
     type: 'piso',
-  },
-  {
-    id: 'carriers',
-    title: 'Carriers',
-    description: 'Datos y fotos por cada carrier del sitio.',
-    icon: '📡',
-    type: 'carriers',
   },
 ]
 

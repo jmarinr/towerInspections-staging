@@ -68,8 +68,12 @@ export default function TowerInventoryTableV2() {
                   <input className={cellClass} value={row.alturaMts || ''} onChange={(e) => updateTowerItemFieldV2(idx, 'alturaMts', e.target.value)} placeholder="m" />
                 </div>
                 <div>
-                  <div className="text-[11px] font-bold text-gray-500 mb-1">Orientación</div>
-                  <select className={selectClass} value={row.orientacion || ''} onChange={(e) => updateTowerItemFieldV2(idx, 'orientacion', e.target.value)}>
+                  <div className="text-[11px] font-bold text-gray-500 mb-1">Orientación <span className="text-red-500">*</span></div>
+                  <select
+                    className={`${selectClass} ${!row.orientacion ? 'border-red-300 bg-red-50' : ''}`}
+                    value={row.orientacion || ''}
+                    onChange={(e) => updateTowerItemFieldV2(idx, 'orientacion', e.target.value)}
+                  >
                     {ORIENTACION_OPTS.map(o => <option key={o} value={o}>{o || 'Seleccione...'}</option>)}
                   </select>
                 </div>
@@ -136,7 +140,7 @@ export default function TowerInventoryTableV2() {
             <thead className="bg-gray-50">
               <tr className="text-left text-xs font-extrabold text-gray-700">
                 <th className="p-3">Altura (m)</th>
-                <th className="p-3">Orientación</th>
+                <th className="p-3">Orientación <span className="text-red-500">*</span></th>
                 <th className="p-3">Tipo Antena/Equipo</th>
                 <th className="p-3">Número</th>
                 <th className="p-3">Alto</th>
@@ -154,7 +158,11 @@ export default function TowerInventoryTableV2() {
                 <tr key={idx} className="border-t border-gray-100">
                   <td className="p-2"><input className={cellClass} value={row.alturaMts || ''} onChange={(e) => updateTowerItemFieldV2(idx, 'alturaMts', e.target.value)} placeholder="m" /></td>
                   <td className="p-2">
-                    <select className={selectClass} value={row.orientacion || ''} onChange={(e) => updateTowerItemFieldV2(idx, 'orientacion', e.target.value)}>
+                    <select
+                      className={`${selectClass} ${!row.orientacion ? 'border-red-300 bg-red-50' : ''}`}
+                      value={row.orientacion || ''}
+                      onChange={(e) => updateTowerItemFieldV2(idx, 'orientacion', e.target.value)}
+                    >
                       {ORIENTACION_OPTS.map(o => <option key={o} value={o}>{o || 'Seleccione...'}</option>)}
                     </select>
                   </td>
