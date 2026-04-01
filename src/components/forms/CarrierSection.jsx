@@ -36,11 +36,19 @@ export default function CarrierSection() {
   const removeCarrier = (idx) => updateEquipmentV2Carriers(carriers.filter((_, i) => i !== idx))
 
   const updateCarrierField = (cIdx, field, value) =>
-    updateEquipmentV2Carriers(carriers.map((c, i) => i === cIdx ? { ...c, [field]: value } : c))
+    updateEquipmentV2Carriers(carriers.map((c, i) => {
+      if (i !== cIdx) return c
+      const updated = { ...c, [field]: value }
+      // Propagate nombre to all rows automatically
+      if (field === 'nombre') {
+        updated.items = (c.items || []).map(item => ({ ...item, carrier: value }))
+      }
+      return updated
+    }))
 
   const addItem = (cIdx) =>
     updateEquipmentV2Carriers(carriers.map((c, i) =>
-      i !== cIdx ? c : { ...c, items: [...(c.items || []), emptyItem()] }
+      i !== cIdx ? c : { ...c, items: [...(c.items || []), { ...emptyItem(), carrier: c.nombre || '' }] }
     ))
 
   const removeItem = (cIdx, rIdx) =>
