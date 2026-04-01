@@ -101,12 +101,26 @@ export default function GroundingSystemTest() {
 
   const currentSectionProgress = useMemo(() => {
     if (!currentSection) return { total: 0, filled: 0 }
-    return getSectionProgress(currentSection.fields, groundingData?.[sectionId])
+    const data = sectionId === 'medicion'
+      ? { ...(groundingData?.medicion || {}), ...(groundingData?.evidencia || {}) }
+      : (groundingData?.[sectionId] || {})
+    return getSectionProgress(currentSection.fields, data)
   }, [currentSection, sectionId, groundingData])
+
+  // Merged data for rendering: medicion section includes evidencia photos
+  const sectionData = useMemo(() => {
+    if (sectionId === 'medicion') {
+      return { ...(groundingData?.medicion || {}), ...(groundingData?.evidencia || {}) }
+    }
+    return groundingData?.[sectionId] || {}
+  }, [sectionId, groundingData])
 
   const handleChange = (fieldId, value) => {
     if (!sectionId) return
-    setGroundingField(sectionId, fieldId, value)
+    // Field may declare a dataSectionId to save to a different bucket (e.g. evidencia photos inside medicion section)
+    const field = currentSection?.fields?.find(f => f.id === fieldId)
+    const targetSection = field?.dataSectionId || sectionId
+    setGroundingField(targetSection, fieldId, value)
 
     // Auto-calculations for medicion section
     if (sectionId === 'medicion') {
@@ -136,7 +150,7 @@ export default function GroundingSystemTest() {
   const handleNext = async () => {
     try {
       const fields = currentSection?.fields ?? []
-      const data = groundingData?.[sectionId] ?? {}
+      const data = sectionData
       const requiredMissing = fields
         .filter((f) => f.required)
         .filter((f) => !isFilled(data[f.id]))
@@ -269,7 +283,7 @@ export default function GroundingSystemTest() {
           <DynamicForm
             formCode="grounding-system-test"
             fields={currentSection.fields || []}
-            data={groundingData?.[sectionId] || {}}
+            data={sectionData}
             onChange={handleChange}
           />
         </div>
