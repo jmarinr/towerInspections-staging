@@ -172,14 +172,14 @@ export default function SafetyClimbingDevice() {
   }
 
 
-  if (isFormCompleted(FORM_ID)) return <FormLockedScreen title="Safety Climbing Device" />
+  if (isFormCompleted(FORM_ID)) return <FormLockedScreen title="10 Safety Climbing Device" />
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col">
       <AutosaveIndicator />
 
       <AppHeader
-        title="Safety Climbing Device"
+        title="10 Safety Climbing Device"
         subtitle={safetyData?.datos?.idSitio || safetyData?.datos?.nombreSitio || 'Nuevo'}
         badge="En progreso"
         progress={progress}
@@ -282,7 +282,7 @@ export default function SafetyClimbingDevice() {
 
       <ConfirmFinalizeModal
         show={showConfirm}
-        formName="Safety Climbing Device"
+        formName="10 Safety Climbing Device"
         onCancel={() => setShowConfirm(false)}
         onConfirm={async () => {
           setShowConfirm(false)

@@ -189,14 +189,14 @@ export default function GroundingSystemTest() {
   }
 
 
-  if (isFormCompleted(FORM_ID)) return <FormLockedScreen title="Grounding System Test" />
+  if (isFormCompleted(FORM_ID)) return <FormLockedScreen title="4 Grounding System Test" />
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col">
       <AutosaveIndicator />
 
       <AppHeader
-        title="Grounding System Test"
+        title="4 Grounding System Test"
         subtitle={groundingData?.datos?.idSitio || groundingData?.datos?.nombreSitio || 'Nuevo'}
         badge="En progreso"
         progress={progress}
@@ -298,7 +298,7 @@ export default function GroundingSystemTest() {
 
       <ConfirmFinalizeModal
         show={showConfirm}
-        formName="Grounding System Test"
+        formName="4 Grounding System Test"
         onCancel={() => setShowConfirm(false)}
         onConfirm={async () => {
           setShowConfirm(false)

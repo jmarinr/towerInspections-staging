@@ -77,12 +77,12 @@ export default function PreventiveMaintenanceExecuted() {
   const toggleGroup = (name) => setOpenGroups((prev) => ({ ...prev, [name]: !prev[name] }))
 
 
-  if (isFormCompleted(FORM_ID)) return <FormLockedScreen title="Preventive Maintenance Executed" />
+  if (isFormCompleted(FORM_ID)) return <FormLockedScreen title="2 Preventive Maintenance Executed" />
 
   return (
     <div className="min-h-screen bg-gray-50">
       <AppHeader
-        title="Preventive Maintenance Executed"
+        title="2 Preventive Maintenance Executed"
         subtitle="Reporte de trabajos ejecutados"
         badge="Form 6"
         progress={progress}
@@ -364,7 +364,7 @@ export default function PreventiveMaintenanceExecuted() {
 
       <ConfirmFinalizeModal
         show={showConfirm}
-        formName="Preventive Maintenance Executed"
+        formName="2 Preventive Maintenance Executed"
         onCancel={() => setShowConfirm(false)}
         onConfirm={async () => {
           setShowConfirm(false)
