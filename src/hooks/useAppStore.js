@@ -7,7 +7,7 @@ const getDefaultDate = () => new Date().toISOString().split('T')[0]
 const getDefaultTime = () => new Date().toTimeString().slice(0, 5)
 
 // Versión mostrada en UI y enviada como metadata a Supabase
-const APP_VERSION_DISPLAY = '2.7.9'
+const APP_VERSION_DISPLAY = '2.7.10'
 const FORM_CODE_ADDITIONAL = 'additional-photo-report'
 
 const isDataUrlString = (value) =>
@@ -1036,7 +1036,7 @@ export const useAppStore = create(
 
       // ============ EQUIPMENT INVENTORY V2 ============
       equipmentInventoryV2Data: {
-        siteInfo: {},
+        siteInfo: { proveedor: 'OFG PANAMA, S.A.' },
         torre: { items: [{ alturaMts: '', orientacion: '', tipoEquipo: '', cantidad: '', alto: '', ancho: '', profundidad: '', areaM2: '', carrier: '' }] },
         piso: { clientes: [{ tipoCliente: 'ancla', nombreCliente: '', areaArrendada: '', areaEnUso: '', placaEquipos: '', gabinetes: [{ gabinete: '', largo: '', ancho: '', alto: '', fotoRef: '' }] }] },
         fotos: {},
@@ -1434,7 +1434,7 @@ export const useAppStore = create(
 
       resetEquipmentInventoryV2Data: () => set({
         equipmentInventoryV2Data: {
-          siteInfo: {},
+          siteInfo: { proveedor: 'OFG PANAMA, S.A.' },
           torre: { items: [{ alturaMts: '', orientacion: '', tipoEquipo: '', cantidad: '', alto: '', ancho: '', profundidad: '', areaM2: '', carrier: '' }] },
           piso: { clientes: [{ tipoCliente: 'ancla', nombreCliente: '', areaArrendada: '', areaEnUso: '', placaEquipos: '', gabinetes: [{ gabinete: '', largo: '', ancho: '', alto: '', fotoRef: '' }] }] },
           fotos: {},
