@@ -8,7 +8,7 @@ export const groundingSystemTestConfig = {
       title: 'Datos del sitio',
       description: 'Identificación del sitio y datos de la visita.',
       fields: [
-        { id: 'proveedor', label: 'Proveedor', type: 'text', required: true, placeholder: 'Ej: PTI / Contratista' },
+        { id: 'proveedor', label: 'Proveedor', type: 'text', required: true, placeholder: 'Ej: PTI / Contratista', defaultValue: 'OFG PANAMA, S.A.' },
         { id: 'tipoVisita', label: 'Tipo de visita', type: 'select', required: true, defaultValue: 'mantenimiento', options: [
           { value: '', label: 'Seleccione...' },
           { value: 'inspeccion', label: 'Inspección' },

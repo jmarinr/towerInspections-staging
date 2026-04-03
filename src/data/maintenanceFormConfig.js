@@ -18,7 +18,7 @@ export const maintenanceFormConfig = {
       icon: '📋',
       type: 'form',
       fields: [
-        { id: 'proveedor', label: 'Proveedor', type: 'text', required: true, placeholder: 'Ej: Servicios de Torres CR' },
+        { id: 'proveedor', label: 'Proveedor', type: 'text', required: true, placeholder: 'Ej: Servicios de Torres CR', defaultValue: 'OFG PANAMA, S.A.' },
         { id: 'tipoVisita', label: 'Tipo de Visita', type: 'select', required: true, defaultValue: 'mantenimiento', options: [
           { value: '', label: 'Seleccione...' },
           { value: 'mantenimiento', label: 'Mantenimiento' },

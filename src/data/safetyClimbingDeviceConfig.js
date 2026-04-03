@@ -39,7 +39,7 @@ export const safetyClimbingSections = [
 
 export const safetySectionFields = {
   datos: [
-    { id: 'proveedor', label: 'Proveedor', type: 'text', required: true, placeholder: 'Ej: Servicios de Torres CR' },
+    { id: 'proveedor', label: 'Proveedor', type: 'text', required: true, placeholder: 'Ej: Servicios de Torres CR', defaultValue: 'OFG PANAMA, S.A.' },
     { id: 'tipoVisita', label: 'Tipo de visita', type: 'select', required: true, defaultValue: 'mantenimiento', options: [
       { value: '', label: 'Seleccione...' },
       { value: 'mantenimiento', label: 'Mantenimiento' },
