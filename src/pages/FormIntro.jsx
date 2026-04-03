@@ -27,7 +27,7 @@ const FORM_MAP = {
     icon: ClipboardList,
   },
   mantenimiento: {
-    title: 'Mantenimiento preventivo',
+    title: 'Preventive Maintenance Inspection',
     description: 'Registre actividades de mantenimiento preventivo con fotos antes/después.',
     summary: ['Datos del sitio', 'Checklist de actividades', 'Fotos antes / después'],
     // Ruta canónica (App.jsx mantiene también alias /mantenimiento)
@@ -42,14 +42,14 @@ const FORM_MAP = {
     icon: Package,
   },
   'equipment-v2': {
-    title: 'Inventario de Equipos v2',
+    title: 'Equipment Inventory',
     description: 'Inventario con dimensiones desglosadas y evidencia fotográfica.',
     summary: ['Datos generales', 'Torre (dimensiones)', 'Piso (clientes)', 'Fotos de evidencia'],
     route: '/inventario-equipos-v2',
     icon: Package,
   },
   'sistema-ascenso': {
-    title: 'Sistema de ascenso',
+    title: 'Safety Climbing Device',
     description: 'Inspección de dispositivos y condiciones de seguridad.',
     summary: ['Secciones por componente', 'Campos técnicos', 'Fotos de evidencia'],
     route: '/sistema-ascenso',
@@ -63,7 +63,7 @@ const FORM_MAP = {
     icon: Activity,
   },
   'mantenimiento-ejecutado': {
-    title: 'Mantenimiento ejecutado',
+    title: 'Preventive Maintenance Executed',
     description: 'Registro del mantenimiento preventivo ejecutado (según checklist).',
     summary: ['Datos de ejecución', 'Actividades', 'Fotos antes / después'],
     route: '/mantenimiento-ejecutado',
@@ -78,7 +78,7 @@ const FORM_MAP = {
   },
   // compatibilidad
   'pm-executed': {
-    title: 'Mantenimiento ejecutado',
+    title: 'Preventive Maintenance Executed',
     description: 'Registro del mantenimiento preventivo ejecutado (según checklist).',
     summary: ['Datos de ejecución', 'Actividades', 'Fotos antes / después'],
     route: '/mantenimiento-ejecutado',

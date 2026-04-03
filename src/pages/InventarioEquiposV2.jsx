@@ -93,13 +93,13 @@ export default function InventarioEquiposV2() {
   }
 
 
-  if (isFormCompleted(FORM_ID)) return <FormLockedScreen title="Inventario de Equipos v2" />
+  if (isFormCompleted(FORM_ID)) return <FormLockedScreen title="Equipment Inventory" />
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col">
       <AutosaveIndicator />
       <AppHeader
-        title="Inventario de Equipos v2"
+        title="Equipment Inventory"
         subtitle={siteInfo.idSitio || siteInfo.nombreSitio || 'Nuevo'}
         badge="En progreso"
         onBack={() => navigate('/')}
@@ -149,7 +149,7 @@ export default function InventarioEquiposV2() {
 
       <ConfirmFinalizeModal
         show={showConfirm}
-        formName="Inventario de Equipos v2"
+        formName="Equipment Inventory"
         onCancel={() => setShowConfirm(false)}
         onConfirm={async () => {
           setShowConfirm(false)

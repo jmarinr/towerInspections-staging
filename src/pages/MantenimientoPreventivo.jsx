@@ -257,14 +257,14 @@ export default function MantenimientoPreventivo() {
   }
 
 
-  if (isFormCompleted(FORM_ID)) return <FormLockedScreen title="Mantenimiento Preventivo (Checklist)" />
+  if (isFormCompleted(FORM_ID)) return <FormLockedScreen title="Preventive Maintenance Inspection" />
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col">
       <AutosaveIndicator />
       
       <AppHeader 
-        title="Mantenimiento Preventivo (Checklist)" 
+        title="Preventive Maintenance Inspection" 
         subtitle={formData.idSitio || 'Nuevo'} 
         badge="En progreso" 
         progress={progress} 
@@ -351,7 +351,7 @@ export default function MantenimientoPreventivo() {
 
       <ConfirmFinalizeModal
         show={showConfirm}
-        formName="Mantenimiento Preventivo"
+        formName="Preventive Maintenance Inspection"
         onCancel={() => setShowConfirm(false)}
         onConfirm={async () => {
           setShowConfirm(false)
