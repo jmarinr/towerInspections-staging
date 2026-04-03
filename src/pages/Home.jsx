@@ -21,7 +21,7 @@ const ALL_FORMS = [
   { id: 'equipment',              title: 'Inventario de Equipos',                 description: 'Inventario de equipos (Torre + Piso) con croquis y plano',               icon: LayoutList,     iconBg: 'bg-rose-500',    route: '/intro/equipment' },
   { id: 'equipment-v2',           title: '8 Equipment Inventory',                   description: 'Inventario con dimensiones desglosadas y fotos de evidencia',             icon: Package,        iconBg: 'bg-cyan-400',    route: '/intro/equipment-v2' },
   { id: 'sistema-ascenso',        title: '10 Safety Climbing Device',                description: 'Revisión de dispositivo de ascenso y componentes asociados',              icon: Shield,         iconBg: 'bg-yellow-400',  route: '/intro/sistema-ascenso' },
-  { id: 'additional-photo-report',title: 'Additional Photo Report',      description: 'Captura y organiza las 16 categorías fotográficas requeridas',           icon: ImageIcon,      iconBg: 'bg-teal-500',    route: '/intro/additional-photo-report' },
+  { id: 'additional-photo-report',title: '9 Additional Photo Report',      description: 'Captura y organiza las 16 categorías fotográficas requeridas',           icon: ImageIcon,      iconBg: 'bg-teal-500',    route: '/intro/additional-photo-report' },
   { id: 'grounding-system-test',  title: '4 Grounding System Test',                 description: 'Medición de resistencia del sistema de puesta a tierra y evidencia',     icon: Zap,            iconBg: 'bg-purple-500',  route: '/intro/grounding-system-test' },
 ]
 
@@ -337,7 +337,7 @@ export default function Home() {
               </span>
             )}
           </div>
-          <p className="text-white/70 text-sm mt-0.5">Sistema de Inspección v2.7.7</p>
+          <p className="text-white/70 text-sm mt-0.5">Sistema de Inspección v2.7.8</p>
           {session && (
             <div className="mt-2 flex items-center gap-1.5 bg-white/15 rounded-full px-3 py-1">
               <User size={12} />

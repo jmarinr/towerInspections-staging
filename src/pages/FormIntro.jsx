@@ -70,7 +70,7 @@ const FORM_MAP = {
     icon: CheckCircle2,
   },
   'additional-photo-report': {
-    title: 'Additional Photo Report',
+    title: '9 Additional Photo Report',
     description: 'Capture las 16 categorías fotográficas requeridas para el expediente del sitio.',
     summary: ['16 categorías (ACC, CAM, EQTT…)', 'Acrónimos para nomenclatura de archivos', 'Fotos variables por categoría'],
     route: '/reporte-fotos',
