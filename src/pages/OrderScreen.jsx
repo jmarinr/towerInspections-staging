@@ -14,8 +14,8 @@ function buildOrderNumber(site) {
     .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
     .toUpperCase().replace(/^REGI[OÓ]N[\s-]*/i, '').trim()
     .replace(/\s+/g, '-').replace(/[^A-Z0-9-]/g, '') || 'REGION'
-  const numericPart = (site.site_id || '').match(/(\d+)$/)?.[1] || site.site_id || ''
-  return `OT-${region}-${yyyy}-${mm}-${numericPart}`
+  const sitePart = (site.site_id || '').toUpperCase()
+  return `OT-${region}-${yyyy}-${mm}-${sitePart}`
 }
 
 const getGeo = () =>
