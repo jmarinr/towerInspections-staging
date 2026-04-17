@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Plus, Search, MapPin, ChevronRight, Loader2, FileText, Clock, LogOut, Users } from 'lucide-react'
 import SiteSelector from '../components/ui/SiteSelector'
 import { useAppStore } from '../hooks/useAppStore'
-import { createSiteVisit, fetchOpenVisits, searchVisitByOrder, fetchCompanyOpenVisits } from '../lib/siteVisitService'
+import { createSiteVisit, fetchOpenVisits, fetchCompanyOpenVisits } from '../lib/siteVisitService'
 
 function buildOrderNumber(site) {
   if (!site) return ''
@@ -119,17 +119,6 @@ export default function OrderScreen() {
     } finally { setLoading(false) }
   }
 
-  const handleSearch = async () => {
-    if (!searchQuery.trim()) { loadOpenVisits(); return }
-    setLoadingVisits(true)
-    try {
-      const visit = await searchVisitByOrder(searchQuery.trim(), session.username)
-      setOpenVisits(visit ? [visit] : [])
-    } catch (e) {
-      showToast('Error al buscar', 'error')
-    } finally { setLoadingVisits(false); setSearchedOnce(true) }
-  }
-
   const handleContinueVisit = (visit) => {
     setActiveVisit(visit)
     showToast(`Orden ${visit.order_number} cargada`, 'success')
@@ -213,54 +202,79 @@ export default function OrderScreen() {
         )}
 
         {/* ═══ CONTINUE ORDER ═══ */}
-        {tab === 'continue' && (
-          <>
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 mb-4">
-              <h2 className="text-base font-extrabold text-gray-900">Buscar orden abierta</h2>
-              <p className="text-xs text-gray-500 mt-1 mb-4">Solo se muestran órdenes abiertas creadas por usted</p>
-              <div className="flex gap-2">
-                <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                  placeholder="Buscar por # de orden..."
-                  className="flex-1 px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all" />
-                <button onClick={handleSearch} disabled={loadingVisits}
-                  className="px-4 py-3 rounded-xl bg-primary text-white text-sm font-bold active:scale-95 transition-all flex-shrink-0">
-                  {loadingVisits ? <Loader2 size={16} className="animate-spin" /> : 'Buscar'}
-                </button>
-              </div>
-            </div>
-            {loadingVisits && !openVisits.length ? (
-              <div className="text-center py-10"><Loader2 size={24} className="animate-spin text-gray-400 mx-auto" /><p className="text-xs text-gray-400 mt-2">Buscando...</p></div>
-            ) : openVisits.length > 0 ? (
-              <div className="space-y-2.5">
-                {openVisits.map((v) => (
-                  <button key={v.id} onClick={() => handleContinueVisit(v)}
-                    className="w-full bg-white rounded-2xl border border-gray-200 p-4 text-left active:scale-[0.98] transition-all">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <p className="text-sm font-extrabold text-gray-900">{v.order_number}</p>
-                        <p className="text-sm text-gray-600 mt-0.5">{v.site_name}</p>
-                      </div>
-                      <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-green-50 text-green-600 border border-green-200">Abierta</span>
-                    </div>
-                    <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
-                      <span className="flex items-center gap-1 text-xs text-gray-500">
-                        <Clock size={12} />
-                        {new Date(v.started_at).toLocaleDateString('es', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
-                      </span>
-                      <span className="flex items-center gap-1 text-xs font-bold text-primary">Continuar <ChevronRight size={14} /></span>
-                    </div>
+        {tab === 'continue' && (() => {
+          const filteredOpenVisits = searchQuery.trim()
+            ? openVisits.filter(v => {
+                const q = searchQuery.toLowerCase()
+                return (v.order_number?.toLowerCase().includes(q)) ||
+                       (v.site_id?.toLowerCase().includes(q))     ||
+                       (v.site_name?.toLowerCase().includes(q))
+              })
+            : openVisits
+
+          return (
+            <>
+              <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 mb-4">
+                <h2 className="text-base font-extrabold text-gray-900">Buscar orden abierta</h2>
+                <p className="text-xs text-gray-500 mt-1 mb-4">Solo se muestran órdenes abiertas creadas por usted</p>
+                <div className="flex gap-2">
+                  <input type="text" value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Escape' && setSearchQuery('')}
+                    placeholder="Buscar por # orden, nombre o ID sitio..."
+                    className="flex-1 px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all" />
+                  <button onClick={() => {}} disabled={loadingVisits}
+                    className="px-4 py-3 rounded-xl text-white text-sm font-bold active:scale-95 transition-all flex-shrink-0"
+                    style={{ background: '#1a2b45' }}>
+                    {loadingVisits ? <Loader2 size={16} className="animate-spin" /> : 'Buscar'}
                   </button>
-                ))}
+                </div>
               </div>
-            ) : searchedOnce ? (
-              <div className="text-center py-10">
-                <Search size={24} className="text-gray-400 mx-auto mb-3" />
-                <p className="text-sm font-semibold text-gray-600">Sin órdenes abiertas</p>
-              </div>
-            ) : null}
-          </>
-        )}
+
+              {loadingVisits ? (
+                <div className="text-center py-10">
+                  <Loader2 size={24} className="animate-spin text-gray-400 mx-auto" />
+                  <p className="text-xs text-gray-400 mt-2">Buscando...</p>
+                </div>
+              ) : filteredOpenVisits.length > 0 ? (
+                <div className="space-y-2.5">
+                  {filteredOpenVisits.map((v) => (
+                    <button key={v.id} onClick={() => handleContinueVisit(v)}
+                      className="w-full bg-white rounded-2xl border border-gray-200 p-4 text-left active:scale-[0.98] transition-all">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <p className="text-sm font-extrabold text-gray-900">{v.order_number}</p>
+                          <p className="text-sm text-gray-600 mt-0.5">{v.site_name}</p>
+                          {v.site_id && <p className="text-xs text-gray-400 mt-0.5">ID: {v.site_id}</p>}
+                        </div>
+                        <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-green-50 text-green-600 border border-green-200">Abierta</span>
+                      </div>
+                      <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
+                        <span className="flex items-center gap-1 text-xs text-gray-500">
+                          <Clock size={12} />
+                          {new Date(v.started_at).toLocaleDateString('es', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                        <span className="flex items-center gap-1 text-xs font-bold text-primary">Continuar <ChevronRight size={14} /></span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              ) : searchedOnce ? (
+                <div className="text-center py-10">
+                  <Search size={24} className="text-gray-400 mx-auto mb-3" />
+                  {searchQuery.trim() ? (
+                    <>
+                      <p className="text-sm font-semibold text-gray-600">Sin resultados para "{searchQuery}"</p>
+                      <p className="text-xs text-gray-400 mt-1">Intenta con otro # de orden, nombre o ID sitio</p>
+                    </>
+                  ) : (
+                    <p className="text-sm font-semibold text-gray-600">Sin órdenes abiertas</p>
+                  )}
+                </div>
+              ) : null}
+            </>
+          )
+        })()}
 
         {/* ═══ MI EQUIPO ═══ */}
         {tab === 'team' && (() => {
