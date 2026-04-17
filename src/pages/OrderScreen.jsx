@@ -53,6 +53,7 @@ export default function OrderScreen() {
   const [teamVisits, setTeamVisits] = useState([])
   const [loadingTeam, setLoadingTeam] = useState(false)
   const [teamLoaded, setTeamLoaded] = useState(false)
+  const [teamSearchQuery, setTeamSearchQuery] = useState('')
 
   useEffect(() => { selectSite(null) }, [])
 
@@ -261,56 +262,93 @@ export default function OrderScreen() {
           </>
         )}
 
-        {/* ═══ MI EQUIPO (NEW) ═══ */}
-        {tab === 'team' && (
-          <>
-            <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 mb-4 flex items-start gap-2">
-              <Users size={14} className="text-blue-600 flex-shrink-0 mt-0.5" />
-              <p className="text-xs text-blue-800 leading-relaxed">
-                Órdenes abiertas de tu empresa. Únete a una para colaborar en formularios disponibles.
-              </p>
-            </div>
+        {/* ═══ MI EQUIPO ═══ */}
+        {tab === 'team' && (() => {
+          const filteredTeamVisits = teamSearchQuery.trim()
+            ? teamVisits.filter(v => {
+                const q = teamSearchQuery.toLowerCase()
+                return (v.inspector_name?.toLowerCase().includes(q)) ||
+                       (v.inspector_username?.toLowerCase().includes(q))
+              })
+            : teamVisits
 
-            {loadingTeam ? (
-              <div className="text-center py-10"><Loader2 size={24} className="animate-spin text-gray-400 mx-auto" /><p className="text-xs text-gray-400 mt-2">Cargando equipo...</p></div>
-            ) : teamVisits.length > 0 ? (
-              <div className="space-y-2.5">
-                {teamVisits.map((v) => (
-                  <div key={v.id} className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-                    {/* Card body */}
-                    <div className="p-4">
-                      <div className="flex justify-between items-start mb-3">
-                        <div>
-                          <p className="text-sm font-extrabold text-gray-900">{v.order_number}</p>
-                          <p className="text-sm text-gray-600 mt-0.5">{v.site_name}</p>
-                          <p className="text-xs text-gray-400 mt-0.5">Inspector: {v.inspector_name || v.inspector_username}</p>
+          return (
+            <>
+              {/* Search card — mismo patrón que "Buscar orden abierta" */}
+              <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 mb-4">
+                <h2 className="text-base font-extrabold text-gray-900">Mi Equipo</h2>
+                <p className="text-xs text-gray-500 mt-1 mb-4">
+                  Órdenes abiertas de tu empresa · Únete para colaborar en formularios disponibles
+                </p>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={teamSearchQuery}
+                    onChange={(e) => setTeamSearchQuery(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Escape' && setTeamSearchQuery('')}
+                    placeholder="Buscar por nombre o #empleado..."
+                    className="flex-1 px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                  />
+                  <button
+                    onClick={() => {}}
+                    className="px-4 py-3 rounded-xl text-white text-sm font-bold active:scale-95 transition-all flex-shrink-0"
+                    style={{ background: '#1a2b45' }}>
+                    Buscar
+                  </button>
+                </div>
+              </div>
+
+              {loadingTeam ? (
+                <div className="text-center py-10">
+                  <Loader2 size={24} className="animate-spin text-gray-400 mx-auto" />
+                  <p className="text-xs text-gray-400 mt-2">Cargando equipo...</p>
+                </div>
+              ) : filteredTeamVisits.length > 0 ? (
+                <div className="space-y-2.5">
+                  {filteredTeamVisits.map((v) => (
+                    <div key={v.id} className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+                      <div className="p-4">
+                        <div className="flex justify-between items-start mb-3">
+                          <div>
+                            <p className="text-sm font-extrabold text-gray-900">{v.order_number}</p>
+                            <p className="text-sm text-gray-600 mt-0.5">{v.site_name}</p>
+                            <p className="text-xs text-gray-400 mt-0.5">Inspector: {v.inspector_name || v.inspector_username}</p>
+                          </div>
+                          <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-green-50 text-green-600 border border-green-200">Abierta</span>
                         </div>
-                        <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-green-50 text-green-600 border border-green-200">Abierta</span>
+                        <span className="flex items-center gap-1 text-xs text-gray-500">
+                          <Clock size={12} />
+                          {new Date(v.started_at).toLocaleDateString('es', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                        </span>
                       </div>
-                      <span className="flex items-center gap-1 text-xs text-gray-500">
-                        <Clock size={12} />
-                        {new Date(v.started_at).toLocaleDateString('es', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
-                      </span>
+                      <div className="border-t border-gray-100 px-4 py-3">
+                        <button onClick={() => handleJoinVisit(v)}
+                          className="w-full py-2.5 rounded-xl border border-gray-200 bg-white text-gray-700 text-sm font-semibold active:bg-gray-50 transition-all flex items-center justify-center gap-2">
+                          <Users size={14} className="text-gray-400" /> Unirse y colaborar
+                        </button>
+                      </div>
                     </div>
-                    {/* Card footer — button full-width inside card */}
-                    <div className="border-t border-gray-100 px-4 py-3">
-                      <button onClick={() => handleJoinVisit(v)}
-                        className="w-full py-2.5 rounded-xl border border-gray-200 bg-white text-gray-700 text-sm font-semibold active:bg-gray-50 transition-all flex items-center justify-center gap-2">
-                        <Users size={14} className="text-gray-400" /> Unirse y colaborar
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : teamLoaded ? (
-              <div className="text-center py-10">
-                <Users size={24} className="text-gray-400 mx-auto mb-3" />
-                <p className="text-sm font-semibold text-gray-600">Sin órdenes activas del equipo</p>
-                <p className="text-xs text-gray-400 mt-1">No hay otras órdenes abiertas en tu empresa ahora</p>
-              </div>
-            ) : null}
-          </>
-        )}
+                  ))}
+                </div>
+              ) : teamLoaded ? (
+                <div className="text-center py-10">
+                  <Users size={24} className="text-gray-400 mx-auto mb-3" />
+                  {teamSearchQuery.trim() ? (
+                    <>
+                      <p className="text-sm font-semibold text-gray-600">Sin resultados para "{teamSearchQuery}"</p>
+                      <p className="text-xs text-gray-400 mt-1">Intenta con otro nombre o #empleado</p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-sm font-semibold text-gray-600">Sin órdenes activas del equipo</p>
+                      <p className="text-xs text-gray-400 mt-1">No hay otras órdenes abiertas en tu empresa ahora</p>
+                    </>
+                  )}
+                </div>
+              ) : null}
+            </>
+          )
+        })()}
 
       </main>
     </div>
