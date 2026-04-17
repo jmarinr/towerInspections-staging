@@ -33,7 +33,7 @@ export const groundingSystemTestConfig = {
           { value: 'monopolo', label: 'Monopolo' },
           { value: 'otro', label: 'Otro' },
         ]},
-        { id: 'alturaMts', label: 'Altura (mts)', type: 'number', placeholder: '0' },
+        { id: 'alturaMts', label: 'Altura (mts)', type: 'number', placeholder: '0', min: 0 },
       ],
     },
     {
@@ -84,7 +84,7 @@ export const groundingSystemTestConfig = {
       title: 'Medición de resistencia',
       description: 'Registre los valores medidos (Ohms) y evidencia fotográfica por punto.',
       fields: [
-        { id: 'distanciaElectrodoCorriente', label: 'Distancia elect. corriente (mts)', type: 'number', placeholder: '0' },
+        { id: 'distanciaElectrodoCorriente', label: 'Distancia elect. corriente (mts)', type: 'number', placeholder: '0', min: 0 },
         { id: 'rPataTorre',    label: 'Pata de la torre (Ω)',  type: 'number', placeholder: '0.00' },
         { id: 'fotoPataTorre', label: 'Medición 1 - Conexión electrodo potencial (Pata de la torre)', type: 'photo', dataSectionId: 'evidencia' },
         { id: 'rCerramiento',    label: 'Cerramiento (Ω)',  type: 'number', placeholder: '0.00' },

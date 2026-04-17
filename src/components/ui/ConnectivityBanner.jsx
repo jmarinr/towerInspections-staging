@@ -3,8 +3,9 @@ import { WifiOff, Wifi } from 'lucide-react'
 import { useAppStore } from '../../hooks/useAppStore'
 
 export default function ConnectivityBanner() {
-  const isOnline = useAppStore((s) => s.isOnline)
-  const setOnline = useAppStore((s) => s.setOnline)
+  const isOnline             = useAppStore((s) => s.isOnline)
+  const setOnline            = useAppStore((s) => s.setOnline)
+  const checkAndAutoClose    = useAppStore((s) => s.checkAndAutoCloseVisit)
   const [showReconnected, setShowReconnected] = useState(false)
   const [wasOffline, setWasOffline] = useState(false)
 
@@ -14,6 +15,8 @@ export default function ConnectivityBanner() {
       if (wasOffline) {
         setShowReconnected(true)
         setTimeout(() => setShowReconnected(false), 3000)
+        // Dar 3s para que el queue de sync se procese antes de verificar
+        setTimeout(() => checkAndAutoClose(), 3000)
       }
     }
     const goOffline = () => {
@@ -29,7 +32,7 @@ export default function ConnectivityBanner() {
       window.removeEventListener('online', goOnline)
       window.removeEventListener('offline', goOffline)
     }
-  }, [setOnline, wasOffline])
+  }, [setOnline, wasOffline, checkAndAutoClose])
 
   if (!isOnline) {
     return (

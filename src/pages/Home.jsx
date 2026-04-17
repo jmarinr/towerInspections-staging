@@ -7,7 +7,7 @@ import {
 import { useAppStore } from '../hooks/useAppStore'
 import { filterFormsByRole } from '../lib/auth'
 import {
-  closeSiteVisit, fetchVisitSubmissions, fetchSubmissionAssets,
+  fetchVisitSubmissions, fetchSubmissionAssets,
   fetchVisitAssignments, fetchSubmissionForForm,
 } from '../lib/siteVisitService'
 import { flushSupabaseQueues } from '../lib/supabaseSync'
@@ -283,26 +283,6 @@ export default function Home() {
   // ── Handlers ─────────────────────────────────────────────────────────────
   const handleLogout = () => { logout(); navigate('/login', { replace: true }) }
 
-  const handleCloseOrder = async () => {
-    if (!activeVisit) return
-    if (!window.confirm(`¿Cerrar la orden ${activeVisit.order_number}?`)) return
-    try {
-      let geo = { lat: null, lng: null }
-      try {
-        const pos = await new Promise((res, rej) =>
-          navigator.geolocation.getCurrentPosition(res, rej, { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 })
-        )
-        geo = { lat: pos.coords.latitude, lng: pos.coords.longitude }
-      } catch (_) {}
-      await closeSiteVisit(activeVisit.id, geo)
-      clearActiveVisit()
-      showToast('Orden cerrada exitosamente', 'success')
-      navigate('/order', { replace: true })
-    } catch (e) {
-      showToast('Error al cerrar la orden', 'error')
-    }
-  }
-
   const handleChangeOrder = () => {
     navigateToOrderScreen()
     navigate('/order', { replace: true })
@@ -337,7 +317,7 @@ export default function Home() {
               </span>
             )}
           </div>
-          <p className="text-white/70 text-sm mt-0.5">Sistema de Inspección v2.7.11</p>
+          <p className="text-white/70 text-sm mt-0.5">Sistema de Inspección v2.7.12</p>
           {session && (
             <div className="mt-2 flex items-center gap-1.5 bg-white/15 rounded-full px-3 py-1">
               <User size={12} />
@@ -555,14 +535,6 @@ export default function Home() {
           >
             {isCollaborator ? 'Salir de esta orden' : 'Cambiar Orden'}
           </button>
-          {!isCollaborator && (
-            <button
-              onClick={handleCloseOrder}
-              className="w-full py-3 rounded-xl border-2 border-red-300 bg-red-50 text-red-600 text-sm font-bold active:scale-[0.98] transition-all"
-            >
-              Cerrar Orden
-            </button>
-          )}
         </div>
       )}
 

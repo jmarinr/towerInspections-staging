@@ -60,7 +60,7 @@ export const safetySectionFields = {
       { value: 'arriostrada', label: 'Arriostrada' },
       { value: 'mastil', label: 'Mástil' },
     ]},
-    { id: 'altura', label: 'Altura (m)', type: 'number', placeholder: 'Ej: 45' },
+    { id: 'altura', label: 'Altura (m)', type: 'number', placeholder: 'Ej: 45', min: 0 },
     { id: 'direccion', label: 'Dirección', type: 'textarea', placeholder: 'Dirección del sitio' },
   ],
   herrajes: [
@@ -84,7 +84,7 @@ export const safetySectionFields = {
       { value: 'na', label: 'No aplica' },
     ]},
     { id: 'fotoPrensacableInferior', label: 'Foto - Prensacable inferior', type: 'photo' },
-    { id: 'cantidadPrensacables', label: 'Cantidad de prensacables', type: 'number', placeholder: 'Ej: 3' },
+    { id: 'cantidadPrensacables', label: 'Cantidad de prensacables', type: 'number', placeholder: 'Ej: 3', min: 1, step: 1 },
     { id: 'distanciamiento', label: 'Distanciamiento', type: 'text', placeholder: 'Ej: 15 cm' },
     { id: 'estadoPrensacables', label: 'Estado prensacables', type: 'status' },
     { id: 'comentarioPrensacables', label: 'Observación prensacables', type: 'textarea', placeholder: 'Observaciones...' },
@@ -105,17 +105,17 @@ export const safetySectionFields = {
   ],
   tramos: [
     { id: 'fotoEscalera', label: 'Foto escalera', type: 'photo' },
-    { id: 'cantidadTramos', label: 'Cantidad de tramos', type: 'number', placeholder: 'Ej: 5' },
+    { id: 'cantidadTramos', label: 'Cantidad de tramos', type: 'number', placeholder: 'Ej: 5', min: 1, step: 1 },
     { id: 'estadoEscalera', label: 'Estado escalera', type: 'status' },
     { id: 'comentarioEscalera', label: 'Observación escalera', type: 'textarea', placeholder: 'Observaciones...' },
-    { id: 'cantidadUniones', label: 'Cantidad de uniones', type: 'number', placeholder: 'Ej: 4' },
+    { id: 'cantidadUniones', label: 'Cantidad de uniones', type: 'number', placeholder: 'Ej: 4', min: 1, step: 1 },
     { id: 'fotoUnionTramos', label: 'Foto - Observación unión (tramos)', type: 'photo' },
     { id: 'tramosDañados', label: 'Tramos dañados', type: 'text', placeholder: 'Ej: Tramos 2 y 4' },
     { id: 'diametroTornillo', label: 'Diámetro tornillo', type: 'text', placeholder: 'Ej: 1/2"' },
     { id: 'comentarioTornillos', label: 'Observación tornillería', type: 'textarea', placeholder: 'Observaciones...' },
   ],
   platinas: [
-    { id: 'cantidadPlatinas', label: 'Cantidad de platinas', type: 'number', placeholder: 'Ej: 8' },
+    { id: 'cantidadPlatinas', label: 'Cantidad de platinas', type: 'number', placeholder: 'Ej: 8', min: 1, step: 1 },
     { id: 'observacionPlatinas', label: 'Observación', type: 'textarea', placeholder: 'Observaciones...' },
   ],
   certificacion: [

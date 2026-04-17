@@ -65,7 +65,7 @@ export default function TowerInventoryTableV2() {
               <div className="grid grid-cols-2 gap-2 mb-2">
                 <div>
                   <div className="text-[11px] font-bold text-gray-500 mb-1">Altura (m)</div>
-                  <input className={cellClass} value={row.alturaMts || ''} onChange={(e) => updateTowerItemFieldV2(idx, 'alturaMts', e.target.value)} placeholder="m" />
+                  <input className={cellClass} type="number" min="0" value={row.alturaMts || ''} onChange={(e) => updateTowerItemFieldV2(idx, 'alturaMts', e.target.value)} placeholder="m" />
                 </div>
                 <div>
                   <div className="text-[11px] font-bold text-gray-500 mb-1">Orientación <span className="text-red-500">*</span></div>
@@ -89,7 +89,7 @@ export default function TowerInventoryTableV2() {
                 </div>
                 <div>
                   <div className="text-[11px] font-bold text-gray-500 mb-1">Número</div>
-                  <input className={cellClass} value={row.cantidad || ''} onChange={(e) => updateTowerItemFieldV2(idx, 'cantidad', e.target.value)} placeholder="1" />
+                  <input className={cellClass} type="number" min="1" step="1" value={row.cantidad || ''} onChange={(e) => updateTowerItemFieldV2(idx, 'cantidad', e.target.value)} placeholder="1" />
                 </div>
               </div>
 
@@ -100,14 +100,14 @@ export default function TowerInventoryTableV2() {
                   {row.tipoEquipo === 'MW' ? (
                     <div>
                       <div className="text-[11px] font-bold text-gray-500 mb-1">Diámetro</div>
-                      <input className={cellClass} value={row.alto || ''} onChange={(e) => updateTowerItemFieldV2(idx, 'alto', e.target.value)} placeholder="m" />
+                      <input className={cellClass} type="number" min="0" step="any" value={row.alto || ''} onChange={(e) => updateTowerItemFieldV2(idx, 'alto', e.target.value)} placeholder="m" />
                     </div>
                   ) : (
                     <>
                       {[['Alto', 'alto'], ['Ancho', 'ancho'], ['Prof.', 'profundidad']].map(([lbl, f]) => (
                         <div key={f}>
                           <div className="text-[11px] font-bold text-gray-500 mb-1">{lbl}</div>
-                          <input className={cellClass} value={row[f] || ''} onChange={(e) => updateTowerItemFieldV2(idx, f, e.target.value)} placeholder="m" />
+                          <input className={cellClass} type="number" min="0" step="any" value={row[f] || ''} onChange={(e) => updateTowerItemFieldV2(idx, f, e.target.value)} placeholder="m" />
                         </div>
                       ))}
                     </>
@@ -156,7 +156,7 @@ export default function TowerInventoryTableV2() {
             <tbody>
               {items.map((row, idx) => (
                 <tr key={idx} className="border-t border-gray-100">
-                  <td className="p-2"><input className={cellClass} value={row.alturaMts || ''} onChange={(e) => updateTowerItemFieldV2(idx, 'alturaMts', e.target.value)} placeholder="m" /></td>
+                  <td className="p-2"><input className={cellClass} type="number" min="0" value={row.alturaMts || ''} onChange={(e) => updateTowerItemFieldV2(idx, 'alturaMts', e.target.value)} placeholder="m" /></td>
                   <td className="p-2">
                     <select
                       className={`${selectClass} ${!row.orientacion ? 'border-red-300 bg-red-50' : ''}`}
@@ -171,15 +171,15 @@ export default function TowerInventoryTableV2() {
                       {TIPO_EQUIPO_OPTS.map(o => <option key={o} value={o}>{o || 'Seleccione...'}</option>)}
                     </select>
                   </td>
-                  <td className="p-2"><input className={cellClass} value={row.cantidad || ''} onChange={(e) => updateTowerItemFieldV2(idx, 'cantidad', e.target.value)} placeholder="1" /></td>
+                  <td className="p-2"><input className={cellClass} type="number" min="1" step="1" value={row.cantidad || ''} onChange={(e) => updateTowerItemFieldV2(idx, 'cantidad', e.target.value)} placeholder="1" /></td>
                   <td className="p-2">
                     {row.tipoEquipo !== 'MW'
-                      ? <input className={cellClass} value={row.alto || ''} onChange={(e) => updateTowerItemFieldV2(idx, 'alto', e.target.value)} placeholder="m" />
+                      ? <input className={cellClass} type="number" min="0" step="any" value={row.alto || ''} onChange={(e) => updateTowerItemFieldV2(idx, 'alto', e.target.value)} placeholder="m" />
                       : <div className="px-2 py-2 text-xs text-gray-300 text-center">—</div>}
                   </td>
                   <td className="p-2">
                     {row.tipoEquipo === 'MW'
-                      ? <input className={cellClass} value={row.alto || ''} onChange={(e) => updateTowerItemFieldV2(idx, 'alto', e.target.value)} placeholder="m" />
+                      ? <input className={cellClass} type="number" min="0" step="any" value={row.alto || ''} onChange={(e) => updateTowerItemFieldV2(idx, 'alto', e.target.value)} placeholder="m" />
                       : <div className="px-2 py-2 text-xs text-gray-300 text-center">—</div>}
                   </td>
                   <td className="p-2">

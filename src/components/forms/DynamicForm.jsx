@@ -182,6 +182,9 @@ export default function DynamicForm(props) {
             }}
             onBlur={() => markTouched(field.id)}
             placeholder={field.placeholder}
+            {...(field.min  !== undefined ? { min:  field.min  } : {})}
+            {...(field.max  !== undefined ? { max:  field.max  } : {})}
+            {...(field.step !== undefined ? { step: field.step } : { step: 'any' })}
             className={baseInputClass}
           />
         )

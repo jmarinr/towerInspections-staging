@@ -2,13 +2,37 @@ import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import { queueSubmissionSync, queueAssetUpload, flushSupabaseQueues, clearSupabaseLocalForForm } from '../lib/supabaseSync'
 import { getDeviceId } from '../lib/deviceId'
+import { closeSiteVisit, fetchVisitSubmissions } from '../lib/siteVisitService'
 
 const getDefaultDate = () => new Date().toISOString().split('T')[0]
 const getDefaultTime = () => new Date().toTimeString().slice(0, 5)
 
 // Versión mostrada en UI y enviada como metadata a Supabase
-const APP_VERSION_DISPLAY = '2.7.11'
+const APP_VERSION_DISPLAY = '2.7.12'
 const FORM_CODE_ADDITIONAL = 'additional-photo-report'
+
+// ── Auto-cierre de orden ──────────────────────────────────────────────────────
+// Los 6 formularios que deben estar finalizados para cerrar la orden automáticamente.
+// 'equipment' (legacy) excluido — solo aplica equipment-v2.
+const REQUIRED_CANONICAL = [
+  'mantenimiento',
+  'mantenimiento-ejecutado',
+  'equipment-v2',
+  'sistema-ascenso',
+  'additional-photo-report',
+  'grounding-system-test',
+]
+
+// Mapa de aliases → código canónico (para normalizar lo que viene de Supabase)
+const FORM_CODE_ALIAS = {
+  'preventive-maintenance': 'mantenimiento',
+  'executed-maintenance':   'mantenimiento-ejecutado',
+  'inventario-v2':          'equipment-v2',
+  'safety-system':          'sistema-ascenso',
+  'additional-photo':       'additional-photo-report',
+  'puesta-tierra':          'grounding-system-test',
+}
+const normalizeCode = c => FORM_CODE_ALIAS[c] || c
 
 const isDataUrlString = (value) =>
   typeof value === 'string' && value.startsWith('data:')
@@ -351,6 +375,44 @@ export const useAppStore = create(
         get().resetAllForms()
         set({ activeVisit: null, completedForms: [], formDataOwnerId: null })
       },
+
+      // ── Auto-cierre de orden ──────────────────────────────────────────────
+      // Verifica desde Supabase si los 6 forms requeridos están finalizados.
+      // Si sí → cierra la visita automáticamente con GPS y muestra toast.
+      checkAndAutoCloseVisit: async () => {
+        const visit = get().activeVisit
+        if (!visit || visit.status !== 'open' || String(visit.id).startsWith('local-')) return
+
+        try {
+          const submissions = await fetchVisitSubmissions(visit.id)
+
+          const finalizedCodes = new Set(
+            submissions
+              .filter(s => s.finalized)
+              .map(s => normalizeCode(s.form_code))
+          )
+
+          const allDone = REQUIRED_CANONICAL.every(code => finalizedCodes.has(code))
+          if (!allDone) return
+
+          // Todos los 6 forms finalizados → capturar GPS y cerrar
+          let lat = null, lng = null
+          try {
+            const pos = await new Promise((res, rej) =>
+              navigator.geolocation.getCurrentPosition(res, rej,
+                { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 })
+            )
+            lat = pos.coords.latitude
+            lng = pos.coords.longitude
+          } catch (_) {}
+
+          await closeSiteVisit(visit.id, { lat, lng })
+          get().clearActiveVisit()
+          get().showToast('✓ Orden cerrada automáticamente — todos los formularios completados', 'success')
+        } catch (e) {
+          console.warn('[AutoClose] check failed:', e?.message || e)
+        }
+      },
       // Navigate to order screen without resetting form data
       navigateToOrderScreen: () => {
         // Keep formDataOwnerId and completedForms so we know who owns the cached data
@@ -495,6 +557,12 @@ export const useAppStore = create(
               const submissionId = assignment?.submissionId || null
               queueSubmissionSync(formCode, payload, APP_VERSION_DISPLAY, assignedTo, submissionId)
               flushSupabaseQueues({ formCode })
+
+              // Si el form se guardó como finalizado → verificar auto-cierre
+              // El timeout de 3s da margen para que el sync llegue a Supabase
+              if (payload.finalized) {
+                setTimeout(() => get().checkAndAutoCloseVisit(), 3000)
+              }
             }
           }
         } catch (e) {

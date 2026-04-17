@@ -52,11 +52,11 @@ export const maintenanceFormConfig = {
           { value: 'arriostrada', label: 'Arriostrada' },
           { value: 'mastil', label: 'Mástil' },
         ]},
-        { id: 'alturaTorre', label: 'Altura de la Torre (m)', type: 'number', required: true, placeholder: 'Ej: 45' },
-        { id: 'alturaEdificio', label: 'Altura del Edificio (m)', type: 'number', required: false, placeholder: 'Solo Rooftop', showIf: { field: 'tipoSitio', value: 'rooftop' } },
+        { id: 'alturaTorre', label: 'Altura de la Torre (m)', type: 'number', required: true, placeholder: 'Ej: 45', min: 0 },
+        { id: 'alturaEdificio', label: 'Altura del Edificio (m)', type: 'number', required: false, placeholder: 'Solo Rooftop', min: 0, showIf: { field: 'tipoSitio', value: 'rooftop' } },
         { id: 'alturaTotal', label: 'Altura Total (m)', type: 'calculated', formula: 'alturaTorre + alturaEdificio' },
         { id: 'condicionTorre', label: 'Condición General de la Torre', type: 'status', required: true },
-        { id: 'numSecciones', label: 'Número de Secciones', type: 'number', placeholder: 'Ej: 5' },
+        { id: 'numSecciones', label: 'Número de Secciones', type: 'number', placeholder: 'Ej: 5', min: 1, step: 1 },
         { id: 'tipoSeccion', label: 'Tipo de Sección', type: 'select', showIf: { field: 'tipoTorre', values: ['autosoportada', 'arriostrada'] }, options: [
           { value: '', label: 'Seleccione...' },
           { value: 'triangular', label: 'Triangular' },
@@ -152,7 +152,7 @@ export const maintenanceFormConfig = {
           { value: 'trifasica', label: 'Trifásica' },
         ]},
         { id: 'capacidadTransformador', label: 'Capacidad del Transformador', type: 'text', placeholder: 'Ej: 50 kVA' },
-        { id: 'numMedidores', label: 'Número de Medidores', type: 'number', placeholder: 'Ej: 2' },
+        { id: 'numMedidores', label: 'Número de Medidores', type: 'number', placeholder: 'Ej: 2', min: 1, step: 1 },
         { id: 'medidorSeparadoLuces', label: 'Medidor Separado para Luces de Torre', type: 'select', options: [
           { value: '', label: 'Seleccione...' },
           { value: 'si', label: 'Sí' },
