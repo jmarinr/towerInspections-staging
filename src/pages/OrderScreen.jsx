@@ -281,8 +281,10 @@ export default function OrderScreen() {
           const filteredTeamVisits = teamSearchQuery.trim()
             ? teamVisits.filter(v => {
                 const q = teamSearchQuery.toLowerCase()
-                return (v.inspector_name?.toLowerCase().includes(q)) ||
-                       (v.inspector_username?.toLowerCase().includes(q))
+                return (v.order_number?.toLowerCase().includes(q)) ||
+                       (v.site_id?.toLowerCase().includes(q))     ||
+                       (v.site_name?.toLowerCase().includes(q))   ||
+                       (v.inspector_name?.toLowerCase().includes(q))
               })
             : teamVisits
 
@@ -300,7 +302,7 @@ export default function OrderScreen() {
                     value={teamSearchQuery}
                     onChange={(e) => setTeamSearchQuery(e.target.value)}
                     onKeyDown={(e) => e.key === 'Escape' && setTeamSearchQuery('')}
-                    placeholder="Buscar por nombre o #empleado..."
+                    placeholder="Buscar por # orden, nombre o ID sitio..."
                     className="flex-1 px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
                   />
                   <button
