@@ -46,7 +46,7 @@ export default function Login() {
     e.preventDefault()
     setError('')
     setBlockedByDevice(false)
-    console.log('[App] PTI Inspect v2.7.16 starting') — deviceId:', deviceId.slice(0, 8))
+    console.log('[App] PTI Inspect v2.7.16 starting — deviceId:', deviceId.slice(0, 8))
 
     if (!email.trim())    { setError('Ingrese su correo electrónico'); return }
     if (!password.trim()) { setError('Ingrese su contraseña'); return }
