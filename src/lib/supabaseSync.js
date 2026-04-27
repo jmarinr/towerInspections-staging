@@ -547,6 +547,32 @@ export function getPendingSyncCount() {
   return count
 }
 
+/**
+ * Devuelve el detalle de fotos pendientes de sincronizar, agrupadas por formCode.
+ * Solo incluye fotos con action='upload' (no deletes).
+ * Retorna [] si no hay nada pendiente.
+ * Nunca lanza — seguro de llamar en cualquier momento.
+ */
+export function getPendingAssetsDetail() {
+  try {
+    const assetsMap = loadMap(PENDING_ASSETS_KEY)
+    const result = []
+    for (const formCode of Object.keys(assetsMap)) {
+      const list = Array.isArray(assetsMap[formCode]) ? assetsMap[formCode] : []
+      const uploads = list.filter(a => a?.action === 'upload' || (a?.dataUrl && !a?.action))
+      if (uploads.length === 0) continue
+      result.push({
+        formCode,
+        count: uploads.length,
+        oldest: uploads.reduce((min, a) => a.ts && a.ts < min ? a.ts : min, Infinity),
+      })
+    }
+    return result
+  } catch (_) {
+    return []
+  }
+}
+
 export function startSupabaseBackgroundSync() {
   // flush on load
   setTimeout(() => flushSupabaseQueues(), 1500);

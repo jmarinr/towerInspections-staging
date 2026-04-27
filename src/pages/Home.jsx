@@ -12,6 +12,7 @@ import {
 } from '../lib/siteVisitService'
 import { flushSupabaseQueues } from '../lib/supabaseSync'
 import ClaimFormModal from '../components/ui/ClaimFormModal'
+import SyncStatusBanner from '../components/ui/SyncStatusBanner'
 
 // ─── Form definitions (unchanged from v2.5.85) ───────────────────────────────
 const ALL_FORMS = [
@@ -317,7 +318,7 @@ export default function Home() {
               </span>
             )}
           </div>
-          <p className="text-white/70 text-sm mt-0.5">Sistema de Inspección v2.7.15</p>
+          <p className="text-white/70 text-sm mt-0.5">Sistema de Inspección v2.7.16</p>
           {session && (
             <div className="mt-2 flex items-center gap-1.5 bg-white/15 rounded-full px-3 py-1">
               <User size={12} />
@@ -363,6 +364,9 @@ export default function Home() {
           </p>
         </div>
       )}
+
+      {/* ── Sync status banner — solo visible cuando hay fotos pendientes ── */}
+      <SyncStatusBanner />
 
       {/* ── Form list ── */}
       <main className="flex-1 px-4 mt-3">
