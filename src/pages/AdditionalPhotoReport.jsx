@@ -20,6 +20,7 @@ import { useAppStore, isDisplayablePhoto, recoverPhotoFromQueue } from '../hooks
 import { processImageFile } from '../lib/photoUtils'
 import { PHOTO_CATEGORIES } from '../data/additionalPhotoConfig'
 import { queueAssetUploadIDB, queueAssetDeleteIDB, flushSupabaseQueues } from '../lib/supabaseSync'
+import { idbGetAsset } from '../lib/photoStorageIDB'
 import { onPhotoStatus, PhotoUploadStatus } from '../lib/photoEvents'
 import ConfirmFinalizeModal from '../components/ui/ConfirmFinalizeModal'
 
@@ -81,7 +82,6 @@ function PhotoSlot({ label, acronym, index, value, meta, siteId, startedAt, onCh
 
   // Recuperar preview desde IDB (async) al montar
   useEffect(() => {
-    const { idbGetAsset } = require('../lib/photoStorageIDB')
     idbGetAsset(FORM_CODE, assetKey).then(asset => {
       if (asset?.dataUrl) setIdbRecovered(asset.dataUrl)
     }).catch(() => {})
