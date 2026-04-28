@@ -12,7 +12,7 @@
  */
 import { useState, useEffect, useCallback } from 'react'
 import { CloudOff, RefreshCw, ChevronDown, ChevronUp, Clock } from 'lucide-react'
-import { getPendingAssetsDetail, flushSupabaseQueues } from '../../lib/supabaseSync'
+import { getPendingAssetsDetailFull, flushSupabaseQueues } from '../../lib/supabaseSync'
 
 // Etiquetas legibles por formCode
 const FORM_LABELS = {
@@ -46,8 +46,9 @@ export default function SyncStatusBanner() {
   const [retrying,  setRetrying]  = useState(false)
 
   // Leer la cola — se refresca cada 5s
-  const refresh = useCallback(() => {
-    setDetail(getPendingAssetsDetail())
+  const refresh = useCallback(async () => {
+    const detail = await getPendingAssetsDetailFull()
+    setDetail(detail)
   }, [])
 
   useEffect(() => {

@@ -2,6 +2,13 @@ import { supabase } from './supabaseClient';
 import { getDeviceId } from './deviceId';
 import { dataUrlToBlob } from './dataUrl';
 import { emitPhotoStatus, PhotoUploadStatus } from './photoEvents';
+import {
+  idbQueueAsset, idbQueueDelete, idbGetPending,
+  idbRemoveAsset, idbClearForm, idbCountPending,
+} from './photoStorageIDB'
+
+// Form codes que usan IndexedDB en lugar de localStorage
+const IDB_FORM_CODES = new Set(['additional-photo-report'])
 
 
 // Converts multiple image representations into a Blob:
@@ -75,6 +82,11 @@ export function clearSupabaseLocalForForm(formCode) {
       saveMap(PENDING_ASSETS_KEY, assetsMap);
     }
   } catch (e) {}
+
+  // Si el formulario usa IDB, limpiar también IndexedDB
+  if (IDB_FORM_CODES.has(formCode)) {
+    idbClearForm(formCode).catch(() => {})
+  }
 
   try {
     const idsMap = loadMap(SUBMISSION_IDS_KEY);
@@ -269,6 +281,18 @@ export function queueAssetUpload(formCode, assetType, dataUrl) {
 
   map[formCode] = list
   saveMap(PENDING_ASSETS_KEY, map)
+}
+
+/**
+ * Cola de assets usando IndexedDB — para additional-photo-report.
+ * Sin el límite de ~5MB de localStorage. API idéntica a queueAssetUpload.
+ */
+export async function queueAssetUploadIDB(formCode, assetType, dataUrl) {
+  await idbQueueAsset(formCode, assetType, dataUrl, 'upload')
+}
+
+export async function queueAssetDeleteIDB(formCode, assetType) {
+  await idbQueueDelete(formCode, assetType)
 }
 
 function extFromMime(mime) {
@@ -507,6 +531,89 @@ export async function flushSupabaseQueues({ formCode } = {}) {
         }
       }
     }
+
+    // ── Flush IDB assets (additional-photo-report) ──────────────────────────
+    const idbFormCodes = formCode
+      ? (IDB_FORM_CODES.has(formCode) ? [formCode] : [])
+      : [...IDB_FORM_CODES]
+
+    for (const fc of idbFormCodes) {
+      const idbAssets = await idbGetPending(fc)
+      if (!idbAssets.length) continue
+
+      let submissionId
+      try {
+        submissionId = await ensureSubmissionId(fc)
+      } catch (e) {
+        console.warn('[Supabase][IDB] ensureSubmissionId failed', fc, e?.message || e)
+        continue
+      }
+
+      for (const asset of idbAssets) {
+        const action = asset?.action || 'upload'
+
+        // DELETE
+        if (action === 'delete' || !asset?.dataUrl) {
+          try {
+            await supabase
+              .from('submission_assets')
+              .delete()
+              .eq('submission_id', submissionId)
+              .eq('asset_type', asset.assetType)
+          } catch (_) {}
+          await idbRemoveAsset(fc, asset.assetType)
+          continue
+        }
+
+        // UPLOAD
+        try {
+          emitPhotoStatus(fc, asset.assetType, PhotoUploadStatus.UPLOADING)
+          const blob = await toBlobAny(asset.dataUrl)
+          const mimeExt = (blob.type || '').split('/')[1] || 'jpg'
+          const ext = String(mimeExt).toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg'
+          const safeType = String(asset.assetType).replace(/[^a-zA-Z0-9\-_.:]/g, '_')
+          const objectPath = `${ORG_CODE}/${getDeviceId()}/${fc}/${submissionId}/${safeType}.${ext}`
+
+          const { error: upErr } = await supabase.storage
+            .from(BUCKET)
+            .upload(objectPath, blob, { upsert: true, contentType: blob.type || 'image/jpeg' })
+          if (upErr) throw upErr
+
+          const { data: pub } = supabase.storage.from(BUCKET).getPublicUrl(objectPath)
+          const publicUrl = pub?.publicUrl || null
+
+          await upsertSubmissionAsset({
+            submission_id: submissionId,
+            asset_key:     objectPath,
+            asset_type:    asset.assetType,
+            bucket:        BUCKET,
+            path:          objectPath,
+            public_url:    publicUrl,
+            mime:          blob.type || null,
+            size_bytes:    typeof blob.size === 'number' ? blob.size : null,
+          })
+
+          // Guardar URL para recuperación de preview
+          try {
+            const urlsRaw = localStorage.getItem('pti_uploaded_urls_v1')
+            const urlsMap = urlsRaw ? JSON.parse(urlsRaw) : {}
+            urlsMap[`${fc}::${asset.assetType}`] = publicUrl
+            localStorage.setItem('pti_uploaded_urls_v1', JSON.stringify(urlsMap))
+          } catch (_) {}
+
+          emitPhotoStatus(fc, asset.assetType, PhotoUploadStatus.DONE, publicUrl)
+
+          // Borrar de IDB al subir exitosamente
+          await idbRemoveAsset(fc, asset.assetType)
+
+        } catch (e) {
+          console.warn('[Supabase][IDB] asset upload failed', fc, asset?.assetType, e?.message || e)
+          emitPhotoStatus(fc, asset.assetType, PhotoUploadStatus.ERROR)
+          continue
+        }
+      }
+    }
+
   } finally {
     _flushing = false;
   }
@@ -554,23 +661,45 @@ export function getPendingSyncCount() {
  * Nunca lanza — seguro de llamar en cualquier momento.
  */
 export function getPendingAssetsDetail() {
+  const result = []
+  // localStorage (todos los forms excepto IDB_FORM_CODES)
   try {
     const assetsMap = loadMap(PENDING_ASSETS_KEY)
-    const result = []
     for (const formCode of Object.keys(assetsMap)) {
+      if (IDB_FORM_CODES.has(formCode)) continue  // IDB se maneja abajo
       const list = Array.isArray(assetsMap[formCode]) ? assetsMap[formCode] : []
       const uploads = list.filter(a => a?.action === 'upload' || (a?.dataUrl && !a?.action))
       if (uploads.length === 0) continue
       result.push({
         formCode,
-        count: uploads.length,
+        count:  uploads.length,
         oldest: uploads.reduce((min, a) => a.ts && a.ts < min ? a.ts : min, Infinity),
       })
     }
-    return result
-  } catch (_) {
-    return []
+  } catch (_) {}
+  return result
+}
+
+/**
+ * Versión async que incluye también los pendientes de IDB.
+ * Usada por SyncStatusBanner.
+ */
+export async function getPendingAssetsDetailFull() {
+  const result = getPendingAssetsDetail()  // localStorage items
+  // Añadir IDB items
+  for (const fc of IDB_FORM_CODES) {
+    try {
+      const idbItems = await idbGetPending(fc)
+      const uploads  = idbItems.filter(a => a?.action === 'upload' && a?.dataUrl)
+      if (!uploads.length) continue
+      result.push({
+        formCode: fc,
+        count:    uploads.length,
+        oldest:   uploads.reduce((min, a) => a.ts && a.ts < min ? a.ts : min, Infinity),
+      })
+    } catch (_) {}
   }
+  return result
 }
 
 export function startSupabaseBackgroundSync() {

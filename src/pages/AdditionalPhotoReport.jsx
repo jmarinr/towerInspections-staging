@@ -19,7 +19,7 @@ import StepPills from '../components/layout/StepPills'
 import { useAppStore, isDisplayablePhoto, recoverPhotoFromQueue } from '../hooks/useAppStore'
 import { processImageFile } from '../lib/photoUtils'
 import { PHOTO_CATEGORIES } from '../data/additionalPhotoConfig'
-import { queueAssetUpload, flushSupabaseQueues } from '../lib/supabaseSync'
+import { queueAssetUploadIDB, queueAssetDeleteIDB, flushSupabaseQueues } from '../lib/supabaseSync'
 import { onPhotoStatus, PhotoUploadStatus } from '../lib/photoEvents'
 import ConfirmFinalizeModal from '../components/ui/ConfirmFinalizeModal'
 
@@ -77,11 +77,21 @@ function PhotoSlot({ label, acronym, index, value, meta, siteId, startedAt, onCh
     return () => { unsub(); clearTimeout(statusTimerRef.current) }
   }, [assetKey])
 
+  const [idbRecovered, setIdbRecovered] = useState(null)
+
+  // Recuperar preview desde IDB (async) al montar
+  useEffect(() => {
+    const { idbGetAsset } = require('../lib/photoStorageIDB')
+    idbGetAsset(FORM_CODE, assetKey).then(asset => {
+      if (asset?.dataUrl) setIdbRecovered(asset.dataUrl)
+    }).catch(() => {})
+  }, [assetKey])
+
   const recovered   = useMemo(() => {
     if (isDisplayablePhoto(value)) return value
     if (value) return recoverPhotoFromQueue(FORM_CODE, assetKey)
-    return null
-  }, [value, assetKey])
+    return idbRecovered || null
+  }, [value, assetKey, idbRecovered])
 
   const displayable = confirmedUrl || recovered || (isDisplayablePhoto(value) ? value : null)
   const isUploaded  = !!value && !displayable
@@ -101,7 +111,7 @@ function PhotoSlot({ label, acronym, index, value, meta, siteId, startedAt, onCh
     const now = new Date().toISOString()
     const fname = buildFilename(siteId, acronym, index, startedAt)
     onChange(result.dataUrl, { filename: fname, timestamp: now })
-    queueAssetUpload(FORM_CODE, fname, result.dataUrl)
+    await queueAssetUploadIDB(FORM_CODE, fname, result.dataUrl)
     flushSupabaseQueues({ formCode: FORM_CODE })
     setLoading(false)
     e.target.value = ''
