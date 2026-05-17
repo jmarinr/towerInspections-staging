@@ -172,9 +172,25 @@ export default function SiteSelector({ selectedSite, onSelect }) {
             <div className="p-6 text-center">
               <AlertTriangle size={28} className="text-amber-400 mx-auto mb-2" />
               <div className="font-bold text-sm text-gray-800 mb-1">Sin sitios disponibles</div>
-              <div className="text-xs text-gray-500">
-                No hay sitios asignados a su empresa. Comuníquese con su supervisor.
+              <div className="text-xs text-gray-500 mb-3">
+                Tu cuenta no tiene regiones disponibles. Contactá a tu supervisor o administrador para que configure tu acceso.
               </div>
+              <button
+                onClick={() => {
+                  setLoading(true)
+                  setError(null)
+                  Promise.all([fetchSitesDirect(), fetchRegionsForUser()])
+                    .then(([sitesData, regionsData]) => {
+                      setSites(sitesData)
+                      setRegions(regionsData)
+                      if (regionsData.length === 1) setSelectedRegion(regionsData[0])
+                    })
+                    .catch(e => setError(e.message || 'Error al cargar datos'))
+                    .finally(() => setLoading(false))
+                }}
+                className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-primary text-white">
+                Reintentar
+              </button>
             </div>
           )}
 

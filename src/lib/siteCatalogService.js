@@ -1,128 +1,119 @@
 /**
  * Site Catalog Service
- * Loads sites available to the authenticated inspector
- * based on company → regions → sites relationship.
+ * v2.8.0 — soporta restricción del inspector por `app_user_regions`.
+ *
+ * Lógica de scope para inspector:
+ *   1) Carga company_id del usuario.
+ *   2) Carga app_user_regions del usuario (sus regiones específicas asignadas).
+ *   3) Calcula regiones efectivas:
+ *        - Si hay filas en app_user_regions → solo esas (intersección con
+ *          company_regions por seguridad).
+ *        - Si no hay filas → todas las regiones de company_regions (heredado).
+ *   4) Devuelve sitios activos en esas regiones efectivas.
+ *
+ * RLS de Supabase ya bloquea sitios de regiones/empresas internal, así que
+ * el filtro aquí es funcional, no de seguridad.
  */
 import { supabase } from './supabaseClient'
 
 /**
- * Fetch all active sites available to the current inspector.
- * Uses company_regions join to scope sites to inspector's company.
+ * Resuelve las regiones efectivas del usuario actual.
+ * Retorna { regionIds: uuid[], scopeMode: 'assigned' | 'inherited' | 'none' }
  */
-export async function fetchAvailableSites() {
-  const { data, error } = await supabase
-    .from('sites')
-    .select(`
-      id,
-      site_id,
-      name,
-      province,
-      height_m,
-      lat,
-      lng,
-      region_id,
-      regions!inner (
-        id,
-        name
-      ),
-      company_regions!inner (
-        company_id,
-        companies!inner (
-          id,
-          app_users!inner (
-            id
-          )
-        )
-      )
-    `)
-    .eq('active', true)
-    .order('site_id')
-
-  if (error) throw error
-  return data || []
-}
-
-/**
- * Simpler query using RLS — Supabase will scope via auth.uid()
- * This is the preferred query when RLS policies are in place.
- */
-export async function fetchSitesForInspector() {
+export async function resolveEffectiveRegions() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('No authenticated user')
 
-  const { data, error } = await supabase.rpc('get_sites_for_user', { user_id: user.id })
+  // 1) company_id
+  const { data: userData, error: userError } = await supabase
+    .from('app_users')
+    .select('company_id')
+    .eq('id', user.id)
+    .maybeSingle()
 
-  if (error) {
-    // Fallback: direct query if RPC not available
-    return fetchSitesDirect()
+  if (userError) throw userError
+  if (!userData?.company_id) {
+    return { regionIds: [], scopeMode: 'none' }
   }
-  return data || []
-}
 
-/**
- * Fetch regions available to the current inspector's company.
- * Returns array of { id, name } sorted by name.
- */
-export async function fetchRegionsForUser() {
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('No authenticated user')
+  // 2) Regiones explícitamente asignadas al usuario
+  const { data: userRegions, error: urErr } = await supabase
+    .from('app_user_regions')
+    .select('region_id')
+    .eq('user_id', user.id)
 
-  const { data: userData, error: userError } = await supabase
-    .from('app_users')
-    .select('company_id')
-    .eq('id', user.id)
-    .maybeSingle()
+  if (urErr) throw urErr
 
-  if (userError || !userData?.company_id) throw new Error('Could not load user company')
-
-  const { data, error } = await supabase
-    .from('company_regions')
-    .select('regions(id, name)')
-    .eq('company_id', userData.company_id)
-
-  if (error) throw error
-  return (data || [])
-    .map(r => r.regions)
-    .filter(Boolean)
-    .sort((a, b) => a.name.localeCompare(b.name))
-}
-
-/**
- * Direct query — relies on Supabase RLS to scope correctly,
- * or falls back to fetching all active sites.
- */
-export async function fetchSitesDirect() {
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('No authenticated user')
-
-  // Get user's company_id
-  const { data: userData, error: userError } = await supabase
-    .from('app_users')
-    .select('company_id')
-    .eq('id', user.id)
-    .maybeSingle()
-
-  if (userError || !userData?.company_id) throw new Error('Could not load user company')
-
-  // Get regions for this company
-  const { data: crData, error: crError } = await supabase
+  // 3) Regiones de la empresa
+  const { data: companyRegions, error: crErr } = await supabase
     .from('company_regions')
     .select('region_id')
     .eq('company_id', userData.company_id)
 
-  if (crError) throw crError
-  if (!crData || crData.length === 0) return []
+  if (crErr) throw crErr
+  const companyRegionIds = (companyRegions || []).map(r => r.region_id)
 
-  const regionIds = crData.map(r => r.region_id)
+  if (companyRegionIds.length === 0) {
+    return { regionIds: [], scopeMode: 'none' }
+  }
 
-  // Get active sites in those regions
-  const { data: sites, error: sitesError } = await supabase
+  if (!userRegions || userRegions.length === 0) {
+    // Heredado: todas las regiones de la empresa
+    return { regionIds: companyRegionIds, scopeMode: 'inherited' }
+  }
+
+  // Asignadas explícitas — pero intersectadas con company_regions
+  // (defensa por si el modelo queda inconsistente en algún momento)
+  const userRegionSet = new Set(userRegions.map(r => r.region_id))
+  const effective = companyRegionIds.filter(id => userRegionSet.has(id))
+  return { regionIds: effective, scopeMode: 'assigned' }
+}
+
+/**
+ * Devuelve los sitios activos disponibles para el inspector actual.
+ * Sin parámetros — consulta el usuario logueado vía supabase.auth.
+ */
+export async function fetchSitesDirect() {
+  const { regionIds } = await resolveEffectiveRegions()
+  if (regionIds.length === 0) return []
+
+  const { data: sites, error } = await supabase
     .from('sites')
     .select('id, site_id, name, province, height_m, lat, lng, region_id')
     .in('region_id', regionIds)
     .eq('active', true)
     .order('site_id')
 
-  if (sitesError) throw sitesError
+  if (error) throw error
   return sites || []
+}
+
+/**
+ * Devuelve las regiones disponibles al inspector actual, ordenadas por nombre.
+ * Si tiene `app_user_regions`, son solo esas. Si no, son todas las de su empresa.
+ */
+export async function fetchRegionsForUser() {
+  const { regionIds } = await resolveEffectiveRegions()
+  if (regionIds.length === 0) return []
+
+  const { data, error } = await supabase
+    .from('regions')
+    .select('id, name')
+    .in('id', regionIds)
+    .order('name')
+
+  if (error) throw error
+  return data || []
+}
+
+// ─── Funciones legacy mantenidas por compatibilidad ──────────────────────────
+// Estas funciones se mantienen exportadas pero usan la nueva lógica internamente.
+// No tocan el comportamiento de quien las llamaba.
+
+export async function fetchSitesForInspector() {
+  return fetchSitesDirect()
+}
+
+export async function fetchAvailableSites() {
+  return fetchSitesDirect()
 }

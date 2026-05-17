@@ -28,6 +28,11 @@ export default function Login() {
 
   // ── Core login logic (shared between normal and forced) ──────────────────
   const completeLogin = (profile, authData) => {
+    // v2.8.0 — extraer region_ids del array embebido para usar en filtros offline
+    const regionIds = Array.isArray(profile.app_user_regions)
+      ? profile.app_user_regions.map(r => r.region_id).filter(Boolean)
+      : []
+
     setSession({
       userId:      profile.id,
       username:    authData.session.user.email,
@@ -37,6 +42,8 @@ export default function Login() {
       orgCode:     profile.companies?.org_code || 'PTI',
       companyId:   profile.company_id,
       supervisorId: profile.supervisor_id || null,
+      regionIds,                          // v2.8.0
+      scopeMode:   regionIds.length > 0 ? 'assigned' : 'inherited',  // v2.8.0
     })
     navigate('/order')
   }
@@ -46,7 +53,7 @@ export default function Login() {
     e.preventDefault()
     setError('')
     setBlockedByDevice(false)
-    console.log('[App] PTI Inspect v2.7.17 starting — deviceId:', deviceId.slice(0, 8))
+    console.log('[App] PTI Inspect v2.8.0 starting — deviceId:', deviceId.slice(0, 8))
 
     if (!email.trim())    { setError('Ingrese su correo electrónico'); return }
     if (!password.trim()) { setError('Ingrese su contraseña'); return }
@@ -65,9 +72,10 @@ export default function Login() {
       }
 
       // 2. Load profile — use maybeSingle + no-cache to always get fresh active_device_id
+      // v2.8.0 — también traemos app_user_regions para conocer el scope efectivo
       const { data: profile, error: profileError } = await supabase
         .from('app_users')
-        .select('id, full_name, role, company_id, supervisor_id, active, active_device_id, active_device_at, companies(org_code, name)')
+        .select('id, full_name, role, company_id, supervisor_id, active, active_device_id, active_device_at, companies(org_code, name), app_user_regions(region_id)')
         .eq('id', authData.session.user.id)
         .maybeSingle()
 
@@ -310,7 +318,7 @@ export default function Login() {
         </form>
       )}
 
-      <p className="text-xs text-gray-400 mt-6">PTI Inspect v2.7.17{import.meta.env.VITE_APP_ENV === 'sandbox' ? ' · Sandbox' : ''}</p>
+      <p className="text-xs text-gray-400 mt-6">PTI Inspect v2.8.0{import.meta.env.VITE_APP_ENV === 'sandbox' ? ' · Sandbox' : ''}</p>
       <p className="text-xs text-gray-400 mt-1">
         by{' '}
         <a href="http://henkancx.com" target="_blank" rel="noopener noreferrer"
