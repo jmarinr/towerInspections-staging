@@ -13,6 +13,7 @@ export async function createSiteVisit({ orderNumber, siteId, siteName, siteRef, 
     inspector_username: session.username, inspector_name: session.name || null,
     inspector_role: session.role || null, start_lat: lat || null, start_lng: lng || null,
     status: 'open', started_at: new Date().toISOString(),
+    region_id: regionId || null,   // v2.8.1 — antes no se incluía
   }
   const { data, error } = await supabase.from('site_visits').insert(row).select().single()
   if (error) throw error

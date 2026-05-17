@@ -113,8 +113,13 @@ export default function OrderScreen() {
     } catch (e) {
       if (e?.code === '23505') {
         showToast('Ya existe una orden con ese número', 'error')
+      } else if (e?.code === '42501') {
+        // v2.8.1 — RLS rechazó el INSERT, típicamente por acceso a empresa/región
+        showToast('No tienes permiso para crear órdenes en este sitio. Contactá a tu supervisor.', 'error')
+      } else if (e?.message?.includes('Failed to fetch') || e?.message?.includes('NetworkError')) {
+        showToast('Sin conexión. Reintentá en un momento.', 'error')
       } else {
-        showToast('Error al crear orden. Verifique su conexión.', 'error')
+        showToast('Error al crear orden. Reintentá en un momento.', 'error')
       }
     } finally { setLoading(false) }
   }
